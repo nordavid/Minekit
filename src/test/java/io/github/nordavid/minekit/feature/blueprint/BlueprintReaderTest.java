@@ -166,6 +166,18 @@ class BlueprintReaderTest {
 	}
 
 	@Test
+	void paletteEntriesInTheFieldNamesOfMinecraft26AreRead() throws Exception {
+		// Since data version 5006, stored block states use "id" and "properties".
+		CompoundTag region = region(new int[] {0, 0, 0}, new int[] {1, 1, 1}, List.of(BlockSpec.AIR, STAIRS), new int[] {1});
+		CompoundTag entry = region.getList("BlockStatePalette").orElseThrow().getCompound(1).orElseThrow();
+		entry.putString("id", entry.getStringOr("Name", ""));
+		entry.remove("Name");
+		entry.put("properties", entry.getCompound("Properties").orElseThrow());
+		entry.remove("Properties");
+		assertEquals(STAIRS, roundTrip(litematic(Map.of("r", region)), BlueprintLimits.DEFAULT).at(0, 0, 0));
+	}
+
+	@Test
 	void litematicValuesThatSpanTwoLongsAreRead() throws Exception {
 		List<BlockSpec> palette = new ArrayList<>(List.of(BlockSpec.AIR));
 		for (int i = 0; i < 20; i++) {

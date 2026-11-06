@@ -13,7 +13,8 @@
 			"io.github.nordavid.minekit.gametest.ResourceTrackerGameTest",
 			"io.github.nordavid.minekit.gametest.SmartInventoryGameTest",
 			"io.github.nordavid.minekit.gametest.StorageDepositGameTest",
-			"io.github.nordavid.minekit.gametest.LoadoutQuickActionGameTest"
+			"io.github.nordavid.minekit.gametest.LoadoutQuickActionGameTest",
+			"io.github.nordavid.minekit.gametest.BlueprintGameTest"
 		]
 	},
 	"depends": {

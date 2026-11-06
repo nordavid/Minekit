@@ -472,7 +472,7 @@
 	"minekit.blueprint.not_mirrored": "nicht gespiegelt",
 	"minekit.blueprint.move": "Verschieben",
 	"minekit.blueprint.move_tooltip": "Ein Block; mit Shift zehn. X ist Osten, Z ist Süden.",
-	"minekit.blueprint.rotate": "Drehen ↻",
+	"minekit.blueprint.rotate": "90° drehen",
 	"minekit.blueprint.mirror": "Spiegeln",
 	"minekit.blueprint.here": "Hierher",
 	"minekit.blueprint.here_tooltip": "Setzt den Bauplan vor dich",

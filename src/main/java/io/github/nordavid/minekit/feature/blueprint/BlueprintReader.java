@@ -160,10 +160,14 @@ public final class BlueprintReader {
 		return new int[] {x.get(), y.get(), z.get()};
 	}
 
-	private static BlockSpec blockFromTag(CompoundTag entry) throws BlueprintException {
-		String name = entry.getStringOr("Name", "");
+	/**
+	 * A palette entry. Minecraft 26.x (data version 5006) renamed the fields of a stored block state from {@code Name}
+	 * and {@code Properties} to {@code id} and {@code properties}; files may use either.
+	 */
+	static BlockSpec blockFromTag(CompoundTag entry) throws BlueprintException {
+		String name = entry.getString("Name").or(() -> entry.getString("id")).orElse("");
 		Map<String, String> properties = new HashMap<>();
-		CompoundTag propertiesTag = entry.getCompound("Properties").orElse(new CompoundTag());
+		CompoundTag propertiesTag = entry.getCompound("Properties").or(() -> entry.getCompound("properties")).orElse(new CompoundTag());
 		for (String key : propertiesTag.keySet()) {
 			properties.put(key, propertiesTag.getStringOr(key, ""));
 		}

@@ -472,7 +472,7 @@
 	"minekit.blueprint.not_mirrored": "not mirrored",
 	"minekit.blueprint.move": "Move",
 	"minekit.blueprint.move_tooltip": "One block; with Shift ten. X is east, Z is south.",
-	"minekit.blueprint.rotate": "Turn ↻",
+	"minekit.blueprint.rotate": "Turn 90°",
 	"minekit.blueprint.mirror": "Mirror",
 	"minekit.blueprint.here": "Here",
 	"minekit.blueprint.here_tooltip": "Moves the blueprint in front of you",

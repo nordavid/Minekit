@@ -34,6 +34,7 @@ import org.jspecify.annotations.Nullable;
  * unknown and are reported, never guessed.
  */
 public final class ResolvedBlueprint {
+	private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger("Minekit");
 	/** Properties that decide how a block is turned or which part it is; the rest (water, power, ...) is ignored. */
 	private static final Set<String> ORIENTATION = Set.of("facing", "axis", "half", "type", "rotation", "face", "orientation",
 			"vertical_direction", "part", "hinge");
@@ -69,32 +70,34 @@ public final class ResolvedBlueprint {
 			BlockState state = resolve(spec);
 			states[i] = state;
 			items[i] = state == null ? Items.AIR : state.getBlock().asItem();
-			if (state == null) {
+			if (state == null && !spec.isAir()) {
 				unknown.add(blueprint.palette().get(i).id());
 			}
 		}
 		return new ResolvedBlueprint(file, blueprint, states, items, unknown.stream().distinct().toList());
 	}
 
+	/** Data version from which stored block states use {@code id} and {@code properties} instead of {@code Name} and {@code Properties}. */
+	private static final int FIELD_RENAME_VERSION = 5006;
+
 	/** Runs a block state saved by an older version through Minecraft's data fixer. */
 	private static BlockSpec updated(BlockSpec spec, int from, int to) {
 		try {
+			boolean newNames = from >= FIELD_RENAME_VERSION;
 			CompoundTag tag = new CompoundTag();
-			tag.putString("Name", spec.id());
+			tag.putString(newNames ? "id" : "Name", spec.id());
 			if (!spec.properties().isEmpty()) {
 				CompoundTag properties = new CompoundTag();
 				spec.properties().forEach(properties::putString);
-				tag.put("Properties", properties);
+				tag.put(newNames ? "properties" : "Properties", properties);
 			}
 			Tag fixed = DataFixers.getDataFixer().update(References.BLOCK_STATE, new Dynamic<>(NbtOps.INSTANCE, tag), from, to).getValue();
 			if (fixed instanceof CompoundTag result) {
-				Map<String, String> properties = new java.util.TreeMap<>();
-				CompoundTag props = result.getCompound("Properties").orElse(new CompoundTag());
-				props.keySet().forEach(key -> properties.put(key, props.getStringOr(key, "")));
-				return BlockSpec.of(result.getStringOr("Name", spec.id()), properties);
+				return BlueprintReader.blockFromTag(result);
 			}
-		} catch (RuntimeException ignored) {
+		} catch (RuntimeException | BlueprintException e) {
 			// Keep the original name; resolving decides whether it is known.
+			LOGGER.warn("Could not update block state {} from data version {} to {}", spec, from, to, e);
 		}
 		return spec;
 	}
