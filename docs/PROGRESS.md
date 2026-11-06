@@ -356,3 +356,47 @@ The project owner tested 0.6.0. From this version on, the project uses git: `mai
 |---|---|
 | Unit tests | 149 of 149 passed. New: sessions of two worlds are independent (only the world's own session counts, pausing all, ending one keeps the other); schema 1 migration ends the old global session into the history. |
 | Gametests | All six classes pass. The crafting test checks that every craftable item is listed (no cut-off) and that the creative categories are offered; the phase 5 test checks on the dedicated server that the singleplayer world's session is neither shown nor running there. |
+
+## Phase 6: Blueprints and building tools (done, 2026-11-06, version 0.7.0)
+
+Exit criterion ("external blueprints can be imported and used as a manual building guide without automatic block
+placement") verified in the real client by a gametest. Architecture, format research and library decision:
+[ADR 0008](adr/0008-blueprints-and-building-tools.md).
+
+- [x] Format investigation and parser selection: Sponge schematic v1-v3 (official specification), Litematica (format
+  facts from its source), Minecraft 26.x block state field names; libraries compared (licenses, scope); decision:
+  Minecraft's NBT reader plus own small readers, no third-party code
+- [x] `.litematic` importer (several regions, negative region sizes, tightly packed block states)
+- [x] `.schem` importer (versions 1 to 3, varint block data, unsigned sizes)
+- [x] File validation and limits: file size, NBT memory quota and nesting limit, positions, palette, indexes, data
+  length; readable reasons for every failure; configurable limits; legacy `.schematic` refused with a hint
+- [x] Import by drag and drop onto the blueprint screen or the blueprint folder; originals never changed
+- [x] Background parsing; data fixer for files from older versions; unknown blocks listed
+- [x] Blueprint preview: layer view from above (texture, status colors, north up), size, block count, format
+- [x] Transformations: move (1 or 10), turn in quarter turns, mirror; per blueprint and world
+- [x] World comparison for loaded chunks only: correct, wrong (block or orientation), missing, not loaded, unknown
+- [x] Guide in the world: box, build range, missing and wrong blocks around the player, next block with its name
+- [x] Build progress, build range (layers), materials (to place, carried, stored, missing as resource goals)
+- [x] Measuring: two corners give width, height, length, volume and distance, in the world and as a message
+- [x] No block is ever placed by Minekit
+- [ ] Manual check in the Modrinth instance (0.7.0)
+
+### Verification log (2026-11-06)
+
+| Check | Result |
+|---|---|
+| Unit tests | 163 of 163 passed. New: `BlueprintReaderTest` 8 (block specs; Litematica regions with negative sizes merged into one box; 5-bit values spanning longs; Sponge v2 and v3 with 300-entry palettes and multi-byte varints; v3 `BlockPalette` alias and unsigned sizes; 26.x `id`/`properties` palette entries; eleven kinds of broken files; not compressed, too large, unsupported files), `PlacementTest` 3 (500 random boxes: every turn and mirror maps the box onto itself one to one and back), `BlueprintProgressTest` 3 (air not tracked, counts, lowest open layer, ranges, the sweep). |
+| Gametest: files | Three files in the blueprint folder; the broken one fails with "this is not a compressed blueprint file" and is not shown. A Litematica file saved by 1.20.1 loads: 3 x 2 x 3, 11 blocks; its "grass" is updated to short grass by the data fixer. (The first run found that Minecraft 26.x renamed the block state fields; both spellings are read now.) |
+| Gametest: guide | Placed next to the player: 11 missing, nothing unchecked. After placing stone, dirt in a stone position, short grass, and a stair facing the wrong way with commands: 2 correct, 2 wrong, 7 missing, the next block in the lowest layer. Turning the stair the right way makes it correct. A quarter turn of the placement turns the expected stair from north to east. Screenshot: box, teal missing blocks, red wrong block, amber next block named "Stone". |
+| Gametest: screen | Overview, Layers (status colors and legend) and Materials (7 stone to place, short grass and stairs done) render. A dropped `.schem` file is copied into the folder, becomes the active blueprint (Sponge v3, 4 blocks), and the original is unchanged. |
+| Gametest: measuring | Two marker blocks via Quick Action: "4 x 2 x 3 blocks (24) · 3.7 apart"; screenshot shows the box, the corners, the line and the label. |
+| All gametests | All seven gametest classes pass. The settings page check now presses the Quick Actions switch directly (a sidebar entry has the same text). |
+
+### Known risks and limitations
+
+- **Boxes, not textured ghost blocks.** Missing and wrong blocks are shown as translucent boxes within 10 blocks of
+  the player; the whole structure is visible in the layer view.
+- **Compared:** block and orientation. Not compared: other properties (waterlogged, powered, connections), block
+  entities (chest contents, signs), entities, and blocks where the blueprint has air.
+- **No file dialog:** files are dropped onto the window or put into the folder.
+- **Legacy MCEdit `.schematic`** files are not supported.

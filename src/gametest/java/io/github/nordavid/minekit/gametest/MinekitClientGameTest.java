@@ -121,7 +121,8 @@ public final class MinekitClientGameTest implements FabricClientGameTest {
 		context.waitForScreen(QuickActionsScreen.class);
 		List<String> all = context.computeOnClient(client -> ids(((QuickActionsScreen) client.gui.screen()).matches()));
 		check(all.equals(List.of("open_dashboard", "open_settings", "open_keybinds", "sort_inventory", "open_crafting", "plan_held_item",
-				"resource_session", "goal_held_item", "open_storage_finder", "find_held_item", "open_loadouts", "save_loadout")),
+				"resource_session", "goal_held_item", "open_storage_finder", "find_held_item", "open_loadouts", "save_loadout", "open_blueprints",
+				"blueprint_place_here", "blueprint_toggle_show", "measure_point", "measure_clear")),
 				"all actions listed, got " + all);
 
 		context.getInput().typeChars("settings");

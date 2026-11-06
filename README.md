@@ -3,10 +3,11 @@
 Client-side utility suite for Minecraft Java Edition (Fabric). Minekit runs only on your own client.
 Servers and other players need nothing installed.
 
-> **Status (0.6.1):** Phases 1 to 5 are implemented and tested in the real game client: dashboard, settings, Quick
+> **Status (0.7.0):** Phases 1 to 6 are implemented and tested in the real game client: dashboard, settings, Quick
 > Actions (pinned, numbered, hidden, recent), notifications, inventory sorting with preview and hotbar layout (also on
-> a dedicated server), the Crafting Assistant, the Resource Tracker, the Storage Finder, Smart Deposit and the
-> Loadout Manager. Manual checks in the Modrinth instance are still open. Building tools follow in a later phase. See [docs/PROGRESS.md](docs/PROGRESS.md) and [PROJECT_PLAN.md](PROJECT_PLAN.md).
+> a dedicated server), the Crafting Assistant, the Resource Tracker, the Storage Finder, Smart Deposit, the Loadout
+> Manager and blueprints with building tools. Manual checks in the Modrinth instance are still open. See
+> [docs/PROGRESS.md](docs/PROGRESS.md) and [PROJECT_PLAN.md](PROJECT_PLAN.md).
 
 ## Using Minekit
 
@@ -32,6 +33,7 @@ default.
 - **Deposit** selects the Smart Deposit profile, the categories of the custom profile and whether the hotbar may be
   emptied.
 - **Loadouts** lists the saved loadouts and opens the Loadout Manager.
+- **Blueprints** shows the active blueprint and its progress, the measuring tool and the import limits.
 - **Quick Actions** pins and orders actions for the popup, and hides the ones you never use.
 - **Settings** turns modules on and off and controls the notification cards (shown or hidden, which screen corner).
   Every change is saved immediately.
@@ -169,6 +171,28 @@ or no free slot for what is there now). Items the loadout does not mention stay 
 Applying is not available in creative or spectator mode. It stops when you close the screen or anything unexpected
 happens, and then tells you what is still missing.
 
+### Blueprints and building tools
+
+Minekit reads Litematica (`.litematic`) and Sponge schematic (`.schem`, versions 1 to 3) files and shows them as a
+building guide. It never places a block; you build.
+
+1. Open the blueprint screen (Quick Actions → *Open blueprints*, or the dashboard page *Blueprints*). Drop a file onto
+   the window, or put it into the blueprint folder (*Open folder*). Minekit copies dropped files; the original stays
+   untouched. Choose a blueprint on the left.
+2. *Place in front of me*. Move it block by block (Shift: ten), turn it, mirror it, or move it to where you stand.
+3. Build. Around you, missing blocks glow teal and wrong ones red; the next block (the nearest open one in the lowest
+   unfinished layer) is amber, with its name. *Overview* shows how much is built; *Layers* shows one layer from above
+   in its colors, with what is correct, missing or wrong, and lets you build only some layers; *Materials* lists what
+   is still to place, what you carry and what your storage holds, and turns what is missing into resource goals.
+
+Only chunks your game has loaded are compared: everything else counts as "not loaded", never as built. Old files are
+updated to this version's block names; blocks it does not know are listed. Files and structures above the limits
+(32 MB, 16 million positions, configurable in `blueprints.json`) are refused with the reason.
+
+**Measuring:** look at a block and use Quick Actions → *Measure: set point*, then again on the other corner. Minekit
+shows the box between them, its width, height and length, the volume and the distance. Both blueprints and measuring
+have shortcuts in the controls, unbound by default.
+
 ### Where your data is stored
 
 Everything is stored in `config/minekit/` inside the game folder (the Modrinth instance folder):
@@ -180,6 +204,8 @@ Everything is stored in `config/minekit/` inside the game folder (the Modrinth i
 - `deposit.json`: Smart Deposit settings
 - `quick-actions.json`: pinned, hidden and recently used Quick Actions
 - `loadouts.json`: your loadouts (at most 50; they belong to you, not to a world)
+- `blueprints.json`: the active blueprint, where it stands in each world, the layers being built and the import limits
+- `blueprints/`: your blueprint files
 - `storage-index/`: one file per world (`sp-…`) or server (`mp-…`). The name is a hash, so server addresses are
   not stored in plain text.
 
@@ -232,7 +258,8 @@ client-only, for example if a `main` or `server` entrypoint is added.
 
 Unit tests for logic that runs without Minecraft: config loading and recovery, module lifecycle, search,
 notification queue, HUD placement, shortcut conflicts, client-only metadata, inventory sorting, crafting plans and
-resource sessions, the storage index, Smart Deposit, Quick Action settings and loadouts. The sorting, deposit and
+resource sessions, the storage index, Smart Deposit, Quick Action settings, loadouts, and blueprint files (both
+formats built by the tests, broken files, placement turns and mirrors, progress bookkeeping). The sorting, deposit and
 loadout tests each include a randomized test over 3,000 inventories. They check every time that nothing is lost or
 duplicated and that protected slots stay untouched; the deposit and loadout tests also check that the preview equals
 the execution, and the loadout test that a container only ever gives and that applying twice changes nothing.
@@ -261,6 +288,9 @@ Minekit like a player would:
 - save a loadout, mix up the inventory, compare and apply it in the inventory screen, and take a loadout from a chest
   in single player and on the dedicated server (the server's chest only gives); check that Smart Deposit and the
   loadout panel never stay open together
+- read real `.litematic` and `.schem` files (one broken, one from 1.20.1 with a renamed block), compare the guide with
+  blocks placed by commands (correct, wrong block, wrong orientation, missing), turn the placement, open the blueprint
+  screen's tabs, import a copy by drag and drop, and measure between two blocks
 
 They are a separate test mod (`src/gametest`), never packaged into the Minekit JAR, and not part of `build`. The
 dedicated test server accepts the Minecraft EULA (`eula = true` in `build.gradle`) and runs only locally in
@@ -283,7 +313,7 @@ to `run/` (ignored by git). To join a server straight away:
 A successful start logs:
 
 ```text
-[Minekit] Minekit 0.6.1 initialized (client-only) on Minecraft 26.3 with Fabric Loader 0.20.1
+[Minekit] Minekit 0.7.0 initialized (client-only) on Minecraft 26.3 with Fabric Loader 0.20.1
 ```
 
 On the first start of a fresh `run/` folder Minecraft shows the accessibility onboarding screen, and the
@@ -378,6 +408,8 @@ src/main/java/io/github/nordavid/minekit/
   feature/storage/          A3 Storage Finder (index, finder screen)
   feature/deposit/          D14 Smart Deposit (planner, preview panel)
   feature/loadout/          D12 Loadout Manager (planner, manager screen, container panel)
+  feature/blueprint/        B5/B6 Blueprints (readers, placement, progress, world guide, screen, measuring)
+  core/world/               world and server ids for per-world data
 src/main/resources/         fabric.mod.json, translations (assets/minekit/lang)
 src/test/java/              unit tests
 src/gametest/               in-game tests (separate test mod, not shipped)
