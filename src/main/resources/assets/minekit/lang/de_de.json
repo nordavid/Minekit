@@ -242,6 +242,7 @@
 	"minekit.resources.resumed": "Ressourcen-Sitzung fortgesetzt",
 	"minekit.resources.stopped": "Sitzung „%s“ beendet: %s Items gesammelt",
 	"minekit.resources.no_session": "Keine Sitzung läuft. Eine Sitzung zählt, was du sammelst und verbrauchst, bis du sie beendest.",
+	"minekit.resources.open_elsewhere": "Pausiert in einer anderen Welt: %s (%s)",
 	"minekit.resources.start": "Sitzung starten",
 	"minekit.resources.rules": "So zählt Minekit: Verglichen werden nur Item-Mengen, Umsortieren zählt also nie. Zuwachs ohne offenes Fenster ist „gesammelt“, Abnahme „verbraucht oder abgegeben“. Änderungen bei offenem Inventar, Truhe oder anderem Fenster, im Kreativmodus oder beim Tod sind „unklar“, weil ihre Ursache nicht sicher bestimmbar ist.",
 	"minekit.resources.running": "Läuft · %s",

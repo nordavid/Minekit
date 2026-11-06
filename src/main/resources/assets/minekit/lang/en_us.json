@@ -242,6 +242,7 @@
 	"minekit.resources.resumed": "Resource session resumed",
 	"minekit.resources.stopped": "Session \"%s\" ended: %s items collected",
 	"minekit.resources.no_session": "No session is running. A session counts what you collect and use until you end it.",
+	"minekit.resources.open_elsewhere": "Paused in another world: %s (%s)",
 	"minekit.resources.start": "Start session",
 	"minekit.resources.rules": "How Minekit counts: only item totals are compared, so moving items never counts. Gains with no screen open are \"collected\", losses are \"used or given away\". Changes while your inventory, a chest or another screen is open, in creative mode or when you die are \"unclear\", because their cause cannot be told.",
 	"minekit.resources.running": "Running · %s",

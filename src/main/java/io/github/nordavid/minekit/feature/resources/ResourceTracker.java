@@ -1,6 +1,7 @@
 package io.github.nordavid.minekit.feature.resources;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -11,7 +12,11 @@ import java.util.TreeMap;
 import org.jspecify.annotations.Nullable;
 
 /**
- * State of the Resource Tracker: the open session (if any) and finished sessions, newest first. Pure and immutable.
+ * State of the Resource Tracker: the open session of each world (if any) and finished sessions, newest first. Pure
+ * and immutable.
+ *
+ * <p>A session belongs to the world or server it was started in ({@code world} is a
+ * {@link io.github.nordavid.minekit.core.world.WorldIds world id}): it counts only there, and another world has its own.
  *
  * <p>Counting rules (shown to the player as well):
  * <ul>
@@ -23,44 +28,67 @@ import org.jspecify.annotations.Nullable;
  *   <li>While paused, observations only move the baseline.</li>
  * </ul>
  *
- * @param current  the open session, running or paused
- * @param history  finished sessions, newest first, at most {@link #MAX_HISTORY}
+ * @param open    world id to that world's open session, running or paused
+ * @param history finished sessions of all worlds, newest first, at most {@link #MAX_HISTORY}
  */
-public record ResourceTracker(@Nullable ResourceSession current, List<ResourceSession> history) {
+public record ResourceTracker(Map<String, ResourceSession> open, List<ResourceSession> history) {
 	public static final int MAX_HISTORY = 30;
-	public static final ResourceTracker EMPTY = new ResourceTracker(null, List.of());
+	public static final ResourceTracker EMPTY = new ResourceTracker(Map.of(), List.of());
 
 	public ResourceTracker {
+		open = Collections.unmodifiableMap(new TreeMap<>(open));
 		history = List.copyOf(history);
 	}
 
-	public Optional<ResourceSession> currentSession() {
-		return Optional.ofNullable(current);
+	/** The open session of a world, or {@code null}. */
+	public @Nullable ResourceSession current(String world) {
+		return open.get(world);
 	}
 
-	/** Starts a new session, ending an open one first. */
-	public ResourceTracker start(String id, String name, String world, long now) {
-		ResourceTracker base = current != null ? stop(now) : this;
-		ResourceSession session = new ResourceSession(id, name, world, now, 0, now, -1, Map.of(), Map.of(), Map.of(), Map.of(), Map.of());
-		return new ResourceTracker(session, base.history);
+	public Optional<ResourceSession> currentSession(String world) {
+		return Optional.ofNullable(open.get(world));
 	}
 
-	public ResourceTracker pause(long now) {
+	/** Open sessions of other worlds than {@code world}. */
+	public List<ResourceSession> openElsewhere(String world) {
+		return open.entrySet().stream().filter(entry -> !entry.getKey().equals(world)).map(Map.Entry::getValue).toList();
+	}
+
+	/** Starts a new session in a world, ending that world's open session first. */
+	public ResourceTracker start(String world, String id, String name, String label, long now) {
+		ResourceTracker base = open.containsKey(world) ? stop(world, now) : this;
+		ResourceSession session = new ResourceSession(id, name, label, now, 0, now, -1, Map.of(), Map.of(), Map.of(), Map.of(), Map.of());
+		return base.with(world, session);
+	}
+
+	public ResourceTracker pause(String world, long now) {
+		ResourceSession current = open.get(world);
 		if (current == null || !current.isRunning()) {
 			return this;
 		}
-		return new ResourceTracker(current.with(current.durationMillis(now), -1, -1), history);
+		return with(world, current.with(current.durationMillis(now), -1, -1));
 	}
 
-	public ResourceTracker resume(long now) {
+	/** Pauses every running session, for example when the player leaves a world. */
+	public ResourceTracker pauseAll(long now) {
+		ResourceTracker result = this;
+		for (String world : open.keySet()) {
+			result = result.pause(world, now);
+		}
+		return result;
+	}
+
+	public ResourceTracker resume(String world, long now) {
+		ResourceSession current = open.get(world);
 		if (current == null || current.isRunning()) {
 			return this;
 		}
-		return new ResourceTracker(current.with(current.activeMillis(), now, -1), history);
+		return with(world, current.with(current.activeMillis(), now, -1));
 	}
 
-	/** Ends the open session and moves it to the history. */
-	public ResourceTracker stop(long now) {
+	/** Ends a world's open session and moves it to the history. */
+	public ResourceTracker stop(String world, long now) {
+		ResourceSession current = open.get(world);
 		if (current == null) {
 			return this;
 		}
@@ -68,18 +96,21 @@ public record ResourceTracker(@Nullable ResourceSession current, List<ResourceSe
 		List<ResourceSession> next = new ArrayList<>();
 		next.add(ended);
 		next.addAll(history);
-		return new ResourceTracker(null, next.subList(0, Math.min(next.size(), MAX_HISTORY)));
+		Map<String, ResourceSession> remaining = new TreeMap<>(open);
+		remaining.remove(world);
+		return new ResourceTracker(remaining, next.subList(0, Math.min(next.size(), MAX_HISTORY)));
 	}
 
 	/**
-	 * Applies the change between two inventory observations to the running session.
+	 * Applies the change between two inventory observations to a world's running session.
 	 *
 	 * @param before    item totals at the previous observation
 	 * @param after     item totals now
 	 * @param ambiguous whether the cause of changes cannot be told (a screen was open at either observation, creative
 	 *                  mode, death, world change)
 	 */
-	public ResourceTracker observe(Map<String, Integer> before, Map<String, Integer> after, boolean ambiguous) {
+	public ResourceTracker observe(String world, Map<String, Integer> before, Map<String, Integer> after, boolean ambiguous) {
+		ResourceSession current = open.get(world);
 		if (current == null || !current.isRunning() || before.equals(after)) {
 			return this;
 		}
@@ -97,34 +128,36 @@ public record ResourceTracker(@Nullable ResourceSession current, List<ResourceSe
 				(ambiguous ? unclearOut : consumed).merge(item, -delta, Long::sum);
 			}
 		}
-		return new ResourceTracker(current.withCounts(collected, consumed, unclearIn, unclearOut), history);
+		return with(world, current.withCounts(collected, consumed, unclearIn, unclearOut));
 	}
 
-	public ResourceTracker withCurrent(ResourceSession session) {
-		return new ResourceTracker(Objects.requireNonNull(session), history);
+	/** Replaces a world's open session. */
+	public ResourceTracker with(String world, ResourceSession session) {
+		Map<String, ResourceSession> next = new TreeMap<>(open);
+		next.put(Objects.requireNonNull(world, "world"), Objects.requireNonNull(session, "session"));
+		return new ResourceTracker(next, history);
 	}
 
-	/** Renames the open or a finished session. */
+	/** Renames an open or a finished session. */
 	public ResourceTracker renamed(String id, String name) {
-		if (current != null && current.id().equals(id)) {
-			return withCurrent(current.withName(name));
-		}
-		return new ResourceTracker(current, history.stream().map(session -> session.id().equals(id) ? session.withName(name) : session).toList());
+		Map<String, ResourceSession> nextOpen = new TreeMap<>(open);
+		nextOpen.replaceAll((world, session) -> session.id().equals(id) ? session.withName(name) : session);
+		return new ResourceTracker(nextOpen, history.stream().map(session -> session.id().equals(id) ? session.withName(name) : session).toList());
 	}
 
 	public ResourceTracker deleted(String id) {
-		return new ResourceTracker(current, history.stream().filter(session -> !session.id().equals(id)).toList());
+		return new ResourceTracker(open, history.stream().filter(session -> !session.id().equals(id)).toList());
 	}
 
-	/** Adds goals to the open session, keeping the larger target where one exists. */
-	public ResourceTracker withGoals(Map<String, Integer> goals) {
-		if (current == null) {
+	/** Adds goals to a world's open session, keeping the larger target where one exists. */
+	public ResourceTracker withGoals(String world, Map<String, Integer> goals) {
+		ResourceSession session = open.get(world);
+		if (session == null) {
 			return this;
 		}
-		ResourceSession session = current;
 		for (Map.Entry<String, Integer> goal : goals.entrySet()) {
 			session = session.withGoal(goal.getKey(), Math.max(goal.getValue(), session.goals().getOrDefault(goal.getKey(), 0)));
 		}
-		return withCurrent(session);
+		return with(world, session);
 	}
 }

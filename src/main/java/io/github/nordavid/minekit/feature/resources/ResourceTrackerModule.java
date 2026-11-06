@@ -14,6 +14,7 @@ import io.github.nordavid.minekit.core.module.ModuleMetadata;
 import io.github.nordavid.minekit.core.notification.NotificationService;
 import io.github.nordavid.minekit.core.persistence.JsonFileStore;
 import io.github.nordavid.minekit.core.screen.DashboardPages;
+import io.github.nordavid.minekit.core.world.WorldContext;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
@@ -23,7 +24,6 @@ import java.util.function.UnaryOperator;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
@@ -55,6 +55,9 @@ public final class ResourceTrackerModule implements MinekitModule {
 	private @Nullable Map<String, Integer> lastCounts;
 	private boolean lastAmbiguous;
 	private @Nullable ClientLevel lastLevel;
+	/** Level object the world id was computed for, so it is only recomputed on a change. */
+	private @Nullable ClientLevel worldLevel;
+	private @Nullable String worldId;
 	private long ticks;
 	private boolean dirty;
 	private int idCounter;
@@ -100,10 +103,14 @@ public final class ResourceTrackerModule implements MinekitModule {
 
 			@Override
 			public void addGoals(Map<String, Integer> newGoals, String sessionName) {
-				if (tracker().current() == null) {
+				String world = world();
+				if (world == null) {
+					return;
+				}
+				if (currentSession() == null) {
 					start(sessionName);
 				}
-				change(tracker -> tracker.withGoals(newGoals));
+				change(tracker -> tracker.withGoals(world, newGoals));
 				notifications.success(Component.translatable("minekit.resources.goals_added", newGoals.size()));
 			}
 		});
@@ -112,8 +119,8 @@ public final class ResourceTrackerModule implements MinekitModule {
 
 	@Override
 	public void onDisable() {
-		if (tracker().current() != null && tracker().current().isRunning()) {
-			change(tracker -> tracker.pause(System.currentTimeMillis()));
+		if (tracker().open().values().stream().anyMatch(ResourceSession::isRunning)) {
+			change(tracker -> tracker.pauseAll(System.currentTimeMillis()));
 		}
 	}
 
@@ -143,6 +150,17 @@ public final class ResourceTrackerModule implements MinekitModule {
 		return Optional.empty();
 	}
 
+	/** Id of the world the player is in, or {@code null} outside a world. */
+	@Nullable String world() {
+		return Minecraft.getInstance().player == null ? null : WorldContext.current(Minecraft.getInstance()).map(WorldContext::id).orElse(null);
+	}
+
+	/** The open session of the world the player is in, running or paused, or {@code null}. */
+	public @Nullable ResourceSession currentSession() {
+		String world = world();
+		return world == null ? null : tracker().current(world);
+	}
+
 	/** Raises the goal for the held item by a stack, starting a session if none is open. */
 	private void addHeldItemGoal() {
 		Optional<String> held = ItemIds.held();
@@ -150,18 +168,22 @@ public final class ResourceTrackerModule implements MinekitModule {
 			return;
 		}
 		String item = held.get();
-		if (tracker().current() == null) {
+		String world = world();
+		if (world == null) {
+			return;
+		}
+		if (currentSession() == null) {
 			start(I18n.get("minekit.resources.default_name", LocalDateTime.now().format(NAME_TIME)));
 		}
-		ResourceSession session = tracker().current();
+		ResourceSession session = currentSession();
 		int target = (session == null ? 0 : session.goals().getOrDefault(item, 0)) + 64;
-		change(tracker -> tracker.withGoals(Map.of(item, target)));
+		change(tracker -> tracker.withGoals(world, Map.of(item, target)));
 		notifications.success(Component.translatable("minekit.resources.goal_added", ItemIds.name(item), target));
 	}
 
 	/** Starts a session if none is open, otherwise ends the open one. */
 	public void toggleSession() {
-		if (tracker().current() == null) {
+		if (currentSession() == null) {
 			start(I18n.get("minekit.resources.default_name", LocalDateTime.now().format(NAME_TIME)));
 		} else {
 			stop();
@@ -169,32 +191,43 @@ public final class ResourceTrackerModule implements MinekitModule {
 	}
 
 	public void start(String name) {
+		Optional<WorldContext> world = WorldContext.current(Minecraft.getInstance());
+		if (world.isEmpty()) {
+			return;
+		}
 		long now = System.currentTimeMillis();
-		ServerData server = Minecraft.getInstance().getCurrentServer();
-		String world = server == null ? "" : server.name;
 		String id = now + "-" + idCounter++;
 		lastCounts = null;
-		change(tracker -> tracker.start(id, name, world, now));
+		change(tracker -> tracker.start(world.get().id(), id, name, world.get().label(), now));
 		notifications.success(Component.translatable("minekit.resources.started", name));
 	}
 
 	public void pause() {
-		change(tracker -> tracker.pause(System.currentTimeMillis()));
+		String world = world();
+		if (world == null) {
+			return;
+		}
+		change(tracker -> tracker.pause(world, System.currentTimeMillis()));
 		notifications.info(Component.translatable("minekit.resources.paused"));
 	}
 
 	public void resume() {
+		String world = world();
+		if (world == null) {
+			return;
+		}
 		lastCounts = null;
-		change(tracker -> tracker.resume(System.currentTimeMillis()));
+		change(tracker -> tracker.resume(world, System.currentTimeMillis()));
 		notifications.info(Component.translatable("minekit.resources.resumed"));
 	}
 
 	public void stop() {
-		ResourceSession session = tracker().current();
-		if (session == null) {
+		String world = world();
+		ResourceSession session = currentSession();
+		if (world == null || session == null) {
 			return;
 		}
-		change(tracker -> tracker.stop(System.currentTimeMillis()));
+		change(tracker -> tracker.stop(world, System.currentTimeMillis()));
 		long collected = session.collected().values().stream().mapToLong(Long::longValue).sum();
 		notifications.success(Component.translatable("minekit.resources.stopped", session.name(), collected));
 	}
@@ -212,17 +245,27 @@ public final class ResourceTrackerModule implements MinekitModule {
 
 	private void tick(Minecraft minecraft) {
 		ticks++;
-		ResourceSession session = tracker().current();
-		if (!isEnabled() || session == null || !session.isRunning()) {
+		LocalPlayer player = minecraft.player;
+		if (minecraft.level != worldLevel) {
+			// Joined, left or changed world or dimension: find out which world this is (hashing only on a change).
+			worldLevel = minecraft.level;
+			worldId = WorldContext.current(minecraft).map(WorldContext::id).orElse(null);
 			lastCounts = null;
+		}
+		if (player == null || worldId == null) {
+			// Outside a world: pause, so time away is not counted.
+			lastCounts = null;
+			if (tracker().open().values().stream().anyMatch(ResourceSession::isRunning)) {
+				change(tracker -> tracker.pauseAll(System.currentTimeMillis()));
+			}
 			saveIfDirty();
 			return;
 		}
-		LocalPlayer player = minecraft.player;
-		if (player == null) {
-			// Left the world: pause, so time away and the next world's inventory are not counted.
+		String world = worldId;
+		ResourceSession session = tracker().current(world);
+		if (!isEnabled() || session == null || !session.isRunning()) {
 			lastCounts = null;
-			change(tracker -> tracker.pause(System.currentTimeMillis()));
+			saveIfDirty();
 			return;
 		}
 		if (ticks % OBSERVE_INTERVAL != 0) {
@@ -233,7 +276,7 @@ public final class ResourceTrackerModule implements MinekitModule {
 		if (lastCounts != null && minecraft.level == lastLevel) {
 			Map<String, Integer> before = lastCounts;
 			boolean unclear = ambiguous || lastAmbiguous;
-			dirty |= store.updateInMemory(tracker -> tracker.observe(before, counts, unclear));
+			dirty |= store.updateInMemory(tracker -> tracker.observe(world, before, counts, unclear));
 		}
 		lastCounts = counts;
 		lastAmbiguous = ambiguous;

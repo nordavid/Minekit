@@ -7,6 +7,7 @@ import io.github.nordavid.minekit.core.persistence.JsonCodec;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import io.github.nordavid.minekit.core.world.WorldIds;
 import org.junit.jupiter.api.Test;
 
 class StorageIndexTest {
@@ -44,10 +45,10 @@ class StorageIndexTest {
 
 	@Test
 	void contextIdsAreStableHashes() {
-		assertEquals(ContextIds.multiplayer("Play.Example.org "), ContextIds.multiplayer("play.example.org"));
-		assertTrue(ContextIds.multiplayer("play.example.org").matches("mp-[0-9a-f]{16}"));
-		assertTrue(ContextIds.singleplayer("New World").matches("sp-[0-9a-f]{16}"));
-		assertTrue(!ContextIds.singleplayer("A").equals(ContextIds.singleplayer("B")));
+		assertEquals(WorldIds.multiplayer("Play.Example.org "), WorldIds.multiplayer("play.example.org"));
+		assertTrue(WorldIds.multiplayer("play.example.org").matches("mp-[0-9a-f]{16}"));
+		assertTrue(WorldIds.singleplayer("New World").matches("sp-[0-9a-f]{16}"));
+		assertTrue(!WorldIds.singleplayer("A").equals(WorldIds.singleplayer("B")));
 	}
 
 	@Test

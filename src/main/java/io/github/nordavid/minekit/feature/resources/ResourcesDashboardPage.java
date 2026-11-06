@@ -49,7 +49,13 @@ final class ResourcesDashboardPage implements DashboardPage {
 	@Override
 	public void build(Builder builder) {
 		ContentPane content = builder.content();
-		ResourceSession session = module.tracker().current();
+		ResourceSession session = module.currentSession();
+		String world = module.world();
+		if (world != null) {
+			for (ResourceSession elsewhere : module.tracker().openElsewhere(world)) {
+				content.text(Component.translatable("minekit.resources.open_elsewhere", elsewhere.name(), elsewhere.world()), MinekitTheme.TEXT_MUTED);
+			}
+		}
 		if (session == null) {
 			content.text(Component.translatable("minekit.resources.no_session"), MinekitTheme.TEXT_MUTED);
 			builder.widget(button(content.width(), "minekit.resources.start", () -> {
@@ -120,7 +126,10 @@ final class ResourcesDashboardPage implements DashboardPage {
 	}
 
 	private void setGoal(Builder builder, ResourceSession session, String item, int target) {
-		module.change(tracker -> tracker.currentSession().map(current -> tracker.withCurrent(current.withGoal(item, target))).orElse(tracker));
+		String world = module.world();
+		if (world != null) {
+			module.change(tracker -> tracker.currentSession(world).map(current -> tracker.with(world, current.withGoal(item, target))).orElse(tracker));
+		}
 		builder.rebuildLater();
 	}
 

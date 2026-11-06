@@ -53,7 +53,7 @@ final class ResourceHudElement implements MinekitHudElement {
 
 	@Override
 	public Size measure(Font font, int screenWidth, int screenHeight) {
-		ResourceSession session = module.isEnabled() ? module.tracker().current() : null;
+		ResourceSession session = module.isEnabled() ? module.currentSession() : null;
 		if (session == null) {
 			frame = List.of();
 			return Size.NONE;

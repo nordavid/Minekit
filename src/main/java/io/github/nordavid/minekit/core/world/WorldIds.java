@@ -1,4 +1,4 @@
-package io.github.nordavid.minekit.feature.storage;
+package io.github.nordavid.minekit.core.world;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -7,19 +7,20 @@ import java.util.HexFormat;
 import java.util.Locale;
 
 /**
- * File names of storage indexes. A world or server is identified by a hash of its folder name or address, so the
- * storage folder never contains a server address in plain text, and the same world always maps to the same file.
+ * Stable ids of worlds and servers, used for per-world data (storage index files, resource sessions). A world or
+ * server is identified by a hash of its save folder name or address, so no server address is ever stored in plain
+ * text, and the same world always gets the same id.
  */
-public final class ContextIds {
-	private ContextIds() {
+public final class WorldIds {
+	private WorldIds() {
 	}
 
-	/** Index id of a singleplayer world, from its save folder name. */
+	/** Id of a singleplayer world, from its save folder name. */
 	public static String singleplayer(String worldFolder) {
 		return "sp-" + hash(worldFolder);
 	}
 
-	/** Index id of a server, from the address the player connected to (case and surrounding spaces ignored). */
+	/** Id of a server, from the address the player connected to (case and surrounding spaces ignored). */
 	public static String multiplayer(String address) {
 		return "mp-" + hash(address.trim().toLowerCase(Locale.ROOT));
 	}

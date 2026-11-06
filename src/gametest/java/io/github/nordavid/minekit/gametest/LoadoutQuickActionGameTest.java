@@ -74,6 +74,11 @@ public final class LoadoutQuickActionGameTest implements FabricClientGameTest {
 				TestDedicatedServerConnection connection = server.connect()) {
 			connection.waitForChunksRender();
 			server.runCommand("gamemode survival @a");
+			ResourceTrackerModule resources = (ResourceTrackerModule) runtime.modules().module(ResourceTrackerModule.METADATA.id()).orElseThrow();
+			context.waitTicks(2);
+			check(context.computeOnClient(client -> resources.currentSession() == null && resources.tracker().open().size() == 1
+					&& resources.tracker().open().values().stream().noneMatch(session -> session.isRunning())),
+					"the singleplayer world's session stays there, paused, and is not shown on the server");
 			BlockPos chest = context.computeOnClient(client -> client.player.blockPosition()).offset(2, 0, 0);
 			loadoutFromAChest(context, runtime, loadouts, server, connection, chest, "server");
 		}
@@ -145,9 +150,9 @@ public final class LoadoutQuickActionGameTest implements FabricClientGameTest {
 
 		ResourceTrackerModule resources = (ResourceTrackerModule) runtime.modules().module(ResourceTrackerModule.METADATA.id()).orElseThrow();
 		context.runOnClient(client -> action(runtime, "goal_held_item").run().run());
-		int goal = context.computeOnClient(client -> resources.tracker().current().goals().getOrDefault("minecraft:iron_pickaxe", 0));
+		int goal = context.computeOnClient(client -> resources.currentSession().goals().getOrDefault("minecraft:iron_pickaxe", 0));
 		check(goal == 64, "the held item becomes a goal of a new session, got " + goal);
-		context.runOnClient(client -> resources.stop());
+		// The session stays open; it belongs to this world (checked again on the dedicated server).
 	}
 
 	private static void loadoutInTheInventory(ClientGameTestContext context, MinekitRuntime runtime, LoadoutModule loadouts, Consumer<String> command,
