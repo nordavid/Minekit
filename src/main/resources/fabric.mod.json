@@ -1,0 +1,23 @@
+{
+	"schemaVersion": 1,
+	"id": "minekit",
+	"version": "${version}",
+	"name": "MINEKIT",
+	"description": "Client-side utility suite for Minecraft Java Edition. Early development: no player-facing features yet.",
+	"authors": [
+		"David Einenkel"
+	],
+	"license": "MIT",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"io.github.nordavid.minekit.MinekitClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=${loader_version}",
+		"minecraft": "~${minecraft_version}",
+		"java": ">=25",
+		"fabric-api": ">=${fabric_api_min}"
+	}
+}

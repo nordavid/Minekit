@@ -1,0 +1,127 @@
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+
+plugins {
+	// Minecraft 26.x ships unobfuscated, so the non-remapping Loom plugin is used (no mappings, no remapJar).
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+	archivesName = project.archives_base_name
+}
+
+// In-game tests (Fabric client gametest API) live in their own source set and test mod, `minekit_gametest`,
+// which is never packaged into the MINEKIT JAR. Run them with `gradlew runClientGameTest`; they open a game window.
+// eula = true accepts the Minecraft EULA for the local dedicated test server the tests start in build/run
+// (approved by the project owner on 2026-11-06 for multiplayer testing).
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = 'minekit_gametest'
+		enableGameTests = false
+		enableClientGameTests = true
+		eula = true
+		clearRunDirectory = true
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	testImplementation platform("org.junit:junit-bom:${project.junit_version}")
+	testImplementation 'org.junit.jupiter:junit-jupiter'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+processResources {
+	// fabric.mod.json takes its dependency ranges from gradle.properties, so the versions live in one place.
+	def expansions = [
+		version          : project.version,
+		minecraft_version: project.minecraft_version,
+		loader_version   : project.loader_version,
+		fabric_api_min   : project.fabric_api_version.split('\\+')[0],
+	]
+	inputs.properties(expansions)
+
+	filesMatching('fabric.mod.json') {
+		expand(expansions)
+	}
+}
+
+java {
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.release = 25
+	options.encoding = 'UTF-8'
+	options.compilerArgs.addAll(['-Xlint:deprecation', '-Xlint:unchecked'])
+}
+
+jar {
+	def projectName = project.name
+	inputs.property 'projectName', projectName
+
+	from('LICENSE') {
+		rename { "${it}_${projectName}" }
+	}
+}
+
+test {
+	useJUnitPlatform()
+	systemProperty 'minekit.minecraftVersion', project.minecraft_version
+	// Logging goes through Minecraft's log4j config, which writes logs/ into the working directory.
+	workingDir = layout.buildDirectory.dir('test-run').get().asFile
+	doFirst { task -> task.workingDir.mkdirs() }
+}
+
+// Copies the built mod JAR into a launcher instance's mods folder, e.g. a Modrinth App profile.
+// The path is machine-specific and is therefore never committed: set minekit.modsDir in
+// ~/.gradle/gradle.properties or pass -Pminekit.modsDir=<path>. Older MINEKIT JARs in that
+// folder are removed so Fabric does not find the mod twice; no other file is touched.
+def modsDirProperty = providers.gradleProperty('minekit.modsDir')
+def modJar = tasks.named('jar').flatMap { it.archiveFile }
+def modJarPrefix = base.archivesName
+
+tasks.register('installToModrinth') {
+	group = 'minekit'
+	description = 'Copies the MINEKIT JAR into the mods folder given by the minekit.modsDir property.'
+	inputs.file(modJar)
+
+	doLast { task ->
+		if (!modsDirProperty.isPresent()) {
+			throw new GradleException('minekit.modsDir is not set. Pass -Pminekit.modsDir=<path to the instance mods folder> '
+					+ 'or add it to ~/.gradle/gradle.properties (see README).')
+		}
+		Path modsDir = Path.of(modsDirProperty.get())
+		if (!Files.isDirectory(modsDir)) {
+			throw new GradleException("minekit.modsDir does not point to an existing directory: ${modsDir}")
+		}
+
+		Path source = modJar.get().asFile.toPath()
+		try {
+			Files.newDirectoryStream(modsDir, "${modJarPrefix.get()}-*.jar").withCloseable { stream ->
+				stream.each { Path old ->
+					if (old.fileName != source.fileName) {
+						Files.delete(old)
+						task.logger.lifecycle("Removed older build ${old.fileName}")
+					}
+				}
+			}
+			Files.copy(source, modsDir.resolve(source.fileName), StandardCopyOption.REPLACE_EXISTING)
+		} catch (java.nio.file.FileSystemException e) {
+			throw new GradleException("Could not replace ${e.file}: it is in use. Close the game started from this "
+					+ "instance and run installToModrinth again.", e)
+		}
+		task.logger.lifecycle("Installed ${source.fileName} into ${modsDir}")
+	}
+}

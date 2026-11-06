@@ -1,0 +1,23 @@
+{
+	"schemaVersion": 1,
+	"id": "minekit_gametest",
+	"version": "1.0.0",
+	"name": "MINEKIT client gametests",
+	"description": "In-game tests for MINEKIT. Development only; never shipped.",
+	"license": "MIT",
+	"environment": "client",
+	"entrypoints": {
+		"fabric-client-gametest": [
+			"io.github.nordavid.minekit.gametest.MinekitClientGameTest",
+			"io.github.nordavid.minekit.gametest.CraftingGameTest",
+			"io.github.nordavid.minekit.gametest.ResourceTrackerGameTest",
+			"io.github.nordavid.minekit.gametest.SmartInventoryGameTest",
+			"io.github.nordavid.minekit.gametest.StorageDepositGameTest",
+			"io.github.nordavid.minekit.gametest.LoadoutQuickActionGameTest"
+		]
+	},
+	"depends": {
+		"minekit": "*",
+		"fabric-client-gametest-api-v1": "*"
+	}
+}
