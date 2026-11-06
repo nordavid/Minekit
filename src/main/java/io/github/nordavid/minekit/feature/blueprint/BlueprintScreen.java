@@ -227,6 +227,13 @@ public final class BlueprintScreen extends Screen {
 						module.setShow(requested);
 						return module.settings().current().show();
 					}));
+			ToggleButton whole = new ToggleButton(0, 0, pane.width(), ROW, Component.translatable("minekit.blueprint.show_whole"),
+					module.settings().current().whole(), requested -> {
+						module.setWhole(requested);
+						return module.settings().current().whole();
+					});
+			whole.setTooltip(Tooltip.create(Component.translatable("minekit.blueprint.show_whole_tooltip")));
+			addWidget(whole);
 		}
 
 		pane.heading(Component.translatable("minekit.blueprint.progress"));

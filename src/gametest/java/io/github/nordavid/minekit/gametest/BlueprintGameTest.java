@@ -34,7 +34,8 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 /**
  * Blueprints in the real client: real .litematic, .schem and .schematic files (one broken, one with a block name from an
  * older version, one uncompressed MCEdit file with numeric ids), the guide compared with blocks placed by commands,
- * turning, the screen's tabs with the plan and the 3D view, importing by drag and drop, and the measuring tool.
+ * turning, the whole structure in the world and the view around the player, a large structure for the cost of drawing
+ * it, the screen's tabs with the plan and the 3D view, importing by drag and drop, and the measuring tool.
  */
 public final class BlueprintGameTest implements FabricClientGameTest {
 	/** 3 x 2 x 3: a stone floor with old-style "grass" in the middle, a stair facing north and a plank above. */
@@ -48,6 +49,7 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 			Files.createDirectories(module.directory());
 			NbtIo.writeCompressed(litematic(), module.directory().resolve("tower.litematic"));
 			NbtIo.writeCompressed(spongeV3(), module.directory().resolve("slab.schem"));
+			NbtIo.writeCompressed(lattice(), module.directory().resolve("lattice.schem"));
 			Files.write(module.directory().resolve("broken.schem"), new byte[] {0x1f, (byte) 0x8b, 1, 2, 3});
 			// Uncompressed, like the files of some download sites.
 			try (DataOutputStream out = new DataOutputStream(Files.newOutputStream(module.directory().resolve("house.schematic")))) {
@@ -71,12 +73,13 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 			guideFollowsTheWorld(context, module, command, connection, origin);
 			screenTabsAndImport(context, runtime, module);
 			measuring(context, runtime, module, command, connection);
+			largeStructure(context, module);
 		}
 	}
 
 	private static void brokenFileFailsWithAReason(ClientGameTestContext context, MinekitRuntime runtime, BlueprintModule module) {
-		check(context.computeOnClient(client -> module.files()).equals(List.of("broken.schem", "house.schematic", "slab.schem", "tower.litematic")),
-				"the four files are listed, got " + context.computeOnClient(client -> module.files()));
+		check(context.computeOnClient(client -> module.files()).equals(List.of("broken.schem", "house.schematic", "lattice.schem", "slab.schem",
+				"tower.litematic")), "the five files are listed, got " + context.computeOnClient(client -> module.files()));
 		context.runOnClient(client -> module.select("broken.schem"));
 		context.waitFor(client -> module.failedFile().isPresent(), 200);
 		check(module.active().isEmpty(), "a broken file is not shown");
@@ -145,10 +148,21 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 		context.waitTicks(3);
 		check(context.computeOnClient(client -> module.progress().orElseThrow().count(Status.CORRECT)) == 3, "the turned stair is correct now");
 
-		// The guide in the world: look at the structure with no screen open.
+		// The guide in the world: look at the structure with no screen open. The whole structure is shown by default.
 		context.getInput().lookAt(origin.offset(1, 0, 1));
-		context.waitTicks(5);
+		context.waitFor(client -> module.ghostFacesDrawn() > 0, 100);
+		context.waitTicks(3);
+		int whole = context.computeOnClient(client -> module.ghostFacesDrawn());
+		check(whole > 0, "the whole structure is drawn in the world");
 		context.takeScreenshot("minekit-p6-01-guide");
+		QuickAction toggleWhole = action(MinekitRuntime.get(), "blueprint_toggle_whole");
+		context.runOnClient(client -> toggleWhole.run().run());
+		context.waitTicks(3);
+		check(context.computeOnClient(client -> module.ghostFacesDrawn()) == 0 && !module.settings().current().whole(),
+				"around the player only: no whole-structure faces");
+		context.takeScreenshot("minekit-p6-01b-guide-around");
+		context.runOnClient(client -> toggleWhole.run().run());
+		context.waitFor(client -> module.ghostFacesDrawn() > 0, 100);
 
 		// A quarter turn turns the stair as well: facing north becomes facing east.
 		context.runOnClient(client -> module.setPlacement(new Placement(origin.getX(), origin.getY(), origin.getZ(), 1, false)));
@@ -245,6 +259,28 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 		context.runOnClient(client -> action(runtime, "measure_clear").run().run());
 	}
 
+	/** 40 x 20 x 40 blocks of stone and glass in a 3D checkerboard: 96 000 visible faces, more than are drawn. */
+	private static void largeStructure(ClientGameTestContext context, BlueprintModule module) {
+		context.runOnClient(client -> module.select("lattice.schem"));
+		context.waitFor(client -> module.active().map(active -> active.file().equals("lattice.schem")).orElse(false), 400);
+		// Beside the player, so the screenshot shows it from outside.
+		BlockPos feet = context.computeOnClient(client -> client.player.blockPosition());
+		BlockPos corner = feet.offset(6, 0, 6);
+		context.runOnClient(client -> module.setPlacement(new Placement(corner.getX(), corner.getY(), corner.getZ(), 0, false)));
+		context.waitFor(client -> module.ghostFacesDrawn() > 0, 400);
+		context.waitTicks(40);
+		int faces = context.computeOnClient(client -> module.ghostFacesDrawn());
+		long micros = context.computeOnClient(client -> module.ghostDrawMicros());
+		int fps = context.computeOnClient(client -> client.getFps());
+		System.out.println("[Minekit gametest] large structure: " + faces + " faces drawn in " + micros + " us per tick, " + fps + " fps");
+		check(faces > 1000 && faces <= 12_000, "the nearest faces are drawn, at most 12 000, got " + faces);
+		check(micros < 50_000, "drawing takes less than 50 ms per tick, got " + micros + " us");
+		context.getInput().lookAt(corner.offset(20, 6, 20));
+		context.waitTicks(3);
+		context.takeScreenshot("minekit-p6-07-large");
+		context.runOnClient(client -> module.setPlacement(null));
+	}
+
 	private static String measureText(BlockPos a, BlockPos b) {
 		return (Math.abs(a.getX() - b.getX()) + 1) + " × " + (Math.abs(a.getY() - b.getY()) + 1) + " × " + (Math.abs(a.getZ() - b.getZ()) + 1);
 	}
@@ -299,6 +335,36 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 		body.putString("Materials", "Alpha");
 		body.putByteArray("Blocks", new byte[] {1, 1, 35, 20});
 		body.putByteArray("Data", new byte[] {0, 1, 14, 0});
+		CompoundTag root = new CompoundTag();
+		root.put("Schematic", body);
+		return root;
+	}
+
+	private static CompoundTag lattice() {
+		int sizeX = 40;
+		int sizeY = 20;
+		int sizeZ = 40;
+		CompoundTag palette = new CompoundTag();
+		palette.putInt("minecraft:stone", 0);
+		palette.putInt("minecraft:glass", 1);
+		byte[] data = new byte[sizeX * sizeY * sizeZ];
+		for (int y = 0; y < sizeY; y++) {
+			for (int z = 0; z < sizeZ; z++) {
+				for (int x = 0; x < sizeX; x++) {
+					data[x + z * sizeX + y * sizeX * sizeZ] = (byte) ((x + y + z) % 2);
+				}
+			}
+		}
+		CompoundTag blocks = new CompoundTag();
+		blocks.put("Palette", palette);
+		blocks.putByteArray("Data", data);
+		CompoundTag body = new CompoundTag();
+		body.putInt("Version", 3);
+		body.putInt("DataVersion", 4500);
+		body.putShort("Width", (short) sizeX);
+		body.putShort("Height", (short) sizeY);
+		body.putShort("Length", (short) sizeZ);
+		body.put("Blocks", blocks);
 		CompoundTag root = new CompoundTag();
 		root.put("Schematic", body);
 		return root;

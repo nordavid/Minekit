@@ -70,6 +70,7 @@ public final class BlueprintModule implements MinekitModule {
 	private final JsonFileStore<BlueprintSettings> settings;
 	private final KeybindManager keybinds;
 	private final NotificationService notifications;
+	private final WorldGhost ghost = new WorldGhost();
 	private final QuickActionRegistry quickActions;
 	private final DashboardPages dashboardPages;
 	private final GoalBridge goals;
@@ -124,6 +125,9 @@ public final class BlueprintModule implements MinekitModule {
 				"blueprint place here move bauplan hier platzieren", this::placeUnavailableReason, this::placeInFront));
 		quickActions.register(new QuickAction("blueprint_toggle_show", Component.translatable("minekit.action.blueprint_toggle_show"),
 				"blueprint show hide ghost bauplan zeigen verbergen", this::unavailableReason, () -> setShow(!settings.current().show())));
+		quickActions.register(new QuickAction("blueprint_toggle_whole", Component.translatable("minekit.action.blueprint_toggle_whole"),
+				"blueprint whole structure around ghost view bauplan ganz bauwerk ansicht", this::unavailableReason,
+				() -> setWhole(!settings.current().whole())));
 		quickActions.register(new QuickAction("measure_point", Component.translatable("minekit.action.measure_point"),
 				"measure distance size messen abstand größe", this::unavailableReason, this::measurePoint));
 		quickActions.register(new QuickAction("measure_clear", Component.translatable("minekit.action.measure_clear"),
@@ -376,7 +380,7 @@ public final class BlueprintModule implements MinekitModule {
 	}
 
 	/** Places the active blueprint two blocks in front of the player, its corner at the player's feet height. */
-	void placeInFront() {
+	public void placeInFront() {
 		LocalPlayer player = Minecraft.getInstance().player;
 		if (player == null || active().isEmpty()) {
 			return;
@@ -390,6 +394,22 @@ public final class BlueprintModule implements MinekitModule {
 
 	void setShow(boolean show) {
 		update(current -> current.withShow(show));
+	}
+
+	/** Shows the whole structure in the world, or only what is missing or wrong around the player. */
+	void setWhole(boolean whole) {
+		update(current -> current.withWhole(whole));
+		notifications.info(Component.translatable(whole ? "minekit.blueprint.whole_on" : "minekit.blueprint.whole_off"));
+	}
+
+	/** Faces of the whole-structure view drawn in the last tick, for tests. */
+	public int ghostFacesDrawn() {
+		return ghost.drawnLastTick();
+	}
+
+	/** Microseconds the whole-structure view took in the last tick, for tests. */
+	public long ghostDrawMicros() {
+		return ghost.drawNanos() / 1000;
 	}
 
 	public void setRange(BlueprintSettings.@Nullable LayerRange range) {
@@ -480,6 +500,8 @@ public final class BlueprintModule implements MinekitModule {
 		}
 		if (settings.current().show()) {
 			drawBlueprint(resolved, progress, placement, level, player.blockPosition(), range);
+		} else {
+			ghost.reset();
 		}
 	}
 
@@ -508,9 +530,9 @@ public final class BlueprintModule implements MinekitModule {
 	}
 
 	/**
-	 * The building guide, as gizmos for this tick: the box, the layers being built, the missing (teal) and wrong (red)
-	 * blocks around the player, and the next block. Only blocks near the player are drawn, so a large structure costs
-	 * no more than a small one.
+	 * The building guide, as gizmos for this tick: the box, the layers being built, either the whole structure
+	 * ({@link WorldGhost}) or the missing (teal) blocks around the player, the wrong (red) blocks around the player, and
+	 * the next block. Around the player the world is read every tick, so the guide reacts at once to placed blocks.
 	 */
 	private void drawBlueprint(ResolvedBlueprint resolved, BlueprintProgress progress, Placement placement, ClientLevel level, BlockPos player,
 			BlueprintSettings.LayerRange range) {
@@ -522,6 +544,12 @@ public final class BlueprintModule implements MinekitModule {
 		if (range.from() > 0 || range.to() < blueprint.sizeY() - 1) {
 			Gizmos.cuboid(new AABB(placement.x(), placement.y() + range.from(), placement.z(), placement.x() + sizeX, placement.y() + range.to() + 1,
 					placement.z() + sizeZ), GizmoStyle.stroke(COLOR_RANGE, 1.5f));
+		}
+		boolean whole = settings.current().whole();
+		if (whole) {
+			ghost.draw(resolved, progress, placement, player);
+		} else {
+			ghost.reset();
 		}
 		int drawn = 0;
 		int vertical = GHOST_RADIUS / 2 + 1;
@@ -540,7 +568,7 @@ public final class BlueprintModule implements MinekitModule {
 					Status status = resolved.check(level, index, placement);
 					progress.set(index, status);
 					BlockPos pos = new BlockPos(player.getX() + dx, player.getY() + dy, player.getZ() + dz);
-					if (status == Status.MISSING) {
+					if (status == Status.MISSING && !whole) {
 						Gizmos.cuboid(pos, 0.02f, GizmoStyle.strokeAndFill(COLOR_MISSING_STROKE, 1.0f, COLOR_MISSING_FILL));
 						drawn++;
 					} else if (status == Status.WRONG) {
