@@ -3,11 +3,16 @@
 	"id": "minekit",
 	"version": "${version}",
 	"name": "Minekit",
-	"description": "Client-side utility suite: inventory sorting with hotbar layout, crafting planner, resource tracker, storage finder, smart deposit, loadouts and quick actions. Works on any server; nothing needs to be installed there.",
+	"description": "Client-side utility suite: inventory sorting with hotbar layout, crafting planner, resource tracker, storage finder, smart deposit, loadouts, quick actions and blueprints with building tools. Works on any server; nothing needs to be installed there.",
 	"icon": "assets/minekit/icon.png",
 	"authors": [
 		"David Einenkel"
 	],
+	"contact": {
+		"homepage": "https://github.com/nordavid/Minekit",
+		"sources": "https://github.com/nordavid/Minekit",
+		"issues": "https://github.com/nordavid/Minekit/issues"
+	},
 	"license": "MIT",
 	"environment": "client",
 	"entrypoints": {

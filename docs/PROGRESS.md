@@ -400,3 +400,40 @@ placement") verified in the real client by a gametest. Architecture, format rese
   entities (chest contents, signs), entities, and blocks where the blueprint has air.
 - **No file dialog:** files are dropped onto the window or put into the folder.
 - **Legacy MCEdit `.schematic`** files are not supported.
+
+## Phase 6.1: Fixes after the third manual test (done, 2026-11-07, version 0.7.1)
+
+Found in the manual test of 0.7.0 with files from a schematic download site. Details:
+[ADR 0008, addendum](adr/0008-blueprints-and-building-tools.md#addendum-2026-11-07-version-071).
+
+- [x] `.litematic` files from the site failed: they are uncompressed NBT. Plain and gzip-compressed NBT are both read
+  now; a damaged gzip stream says so.
+- [x] The site's `.schematic` files are MCEdit files nested in a `Schematic` compound. MCEdit `.schematic` files
+  (Minecraft 1.12 and older) are read now: numeric ids and data values are translated with Minecraft's own table for
+  old worlds, then updated by the data fixer; modded ids stay unknown. Sponge v2 nested the same way is read too.
+- [x] The error notification was cut off: the blueprint screen shows the file name and the full reason, warning and
+  error cards wrap to six lines, and the reason is logged.
+- [x] "The preview is not clear": the *Layers* tab switches between *3D* (the whole structure at an angle, cut at a
+  chosen layer, turnable, colored by build status, block name under the mouse) and *Plan* (one layer from above).
+  Glass and other blocks without a map color are no longer black.
+- [x] Public README: a short landing page; the feature guide moved to `docs/USER_GUIDE.md`, build and test
+  instructions to `docs/DEVELOPMENT.md`; repository links in `fabric.mod.json`.
+- [ ] Manual check in the Modrinth instance (0.7.1)
+
+### Verification log (2026-11-07)
+
+| Check | Result |
+|---|---|
+| The user's files | A temporary local test (not committed) read the five downloaded files: the TNT launcher (`.litematic`, 3 x 3 x 6, 26 blocks), the starter house as `.litematic`, `.schem` and `.schematic` (19 x 24 x 19; 2256 blocks, the MCEdit version 1234 blocks with a 12-entry palette), and a 32 x 130 x 32 farm. |
+| Unit tests | 172 of 172 passed. New: plain NBT, Sponge v2 nested in `Schematic`, MCEdit with data values, `AddBlocks` and a refused "Pocket" file, damaged gzip (`BlueprintReaderTest`); `IsometricViewTest` 6 (one cube's three shaded faces and empty corners, nearer cubes cover farther ones, enclosed cubes are skipped and all 19 visible cubes of a 3 x 3 x 3 block show, see-through blocks blend, tile size, compositing). |
+| Gametest: files | Four files; the broken one fails with "the file is damaged: its compressed data cannot be read", kept as the reason and shown in full on the blueprint screen (screenshot). An uncompressed MCEdit `.schematic` loads: 4 blocks, granite, red wool and glass from numeric ids, nothing unknown. |
+| Gametest: screen | The *Layers* tab opens in 3D: the placed tower with the correct block green, the wrong one red, missing ones dimmed; turned twice it is seen from the north-west. *Plan* shows the layer as before. Labels fit at a 427-pixel-wide GUI. |
+| All gametests | All seven gametest classes pass. |
+
+### Known risks and limitations
+
+- **The 3D view is a picture, not a model:** map colors, no textures; blocks smaller than a cube (torches, flowers,
+  slabs) are drawn as cubes. Structures larger than about 700 x 700 blocks across are too large for it; the plan still
+  works.
+- **MCEdit files:** tile entities and entities are not read (as for the other formats); blocks above id 255 (mods)
+  stay unknown.

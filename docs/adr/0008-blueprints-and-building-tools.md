@@ -41,7 +41,8 @@ spellings and a set of broken files. No third-party code, no license question.
    limit, palette sizes, every palette index and the exact data length. Every failure becomes a reason the player can
    read ("the block data is incomplete", "16 000 000 positions, the limit is ..."), never a crash. Limits are
    configurable in `blueprints.json` (`maxFileMegabytes`, default 32; `maxPositions`, default 16 million, two bytes
-   each in memory). Legacy MCEdit `.schematic` files are recognized and refused with a hint.
+   each in memory). Legacy MCEdit `.schematic` files are recognized and refused with a hint (superseded in 0.7.1:
+   they are read; see the addendum).
 2. **Files live in `config/minekit/blueprints/`.** Minecraft has no file dialog, so files are dropped onto the
    blueprint screen (the way resource packs are added) or put into that folder ("Open folder"). A dropped file is
    copied; the original is never changed, and a name that exists gets " (2)".
@@ -78,3 +79,38 @@ spellings and a set of broken files. No third-party code, no license question.
 - The comparison does not report blocks where the blueprint has air ("extra" blocks).
 - Modded blocks that do not implement `rotate`/`mirror` keep their orientation when the placement turns.
 - Each file is loaded completely into memory: 16 million positions take 32 MB.
+
+## Addendum (2026-11-07, version 0.7.1)
+
+The first manual test used files from a schematic download site. Its `.litematic` files did not load, and the error
+notification was cut off. Findings and decisions:
+
+1. **Plain NBT.** The site serves `.litematic` and `.schematic` files as uncompressed NBT. Litematica itself always
+   compresses, but nothing in the format requires it. Minekit now looks at the first two bytes: the gzip magic number
+   means compressed, a compound tag means plain NBT, anything else is "not a blueprint". A gzip stream that breaks off
+   is reported as damaged. The memory quota and nesting limit apply to both.
+2. **Nested bodies.** The same site nests MCEdit and Sponge v2 data in a compound named `Schematic`, which only Sponge
+   v3 specifies. The reader now looks for the content there for every format and decides by the fields it finds
+   (`Blocks` as a byte array or `Materials`: MCEdit; `Version`, `Palette`, `BlockData` or a `Blocks` compound:
+   Sponge).
+3. **MCEdit `.schematic` is read.** Files from Minecraft 1.12 and older store numeric block ids and four-bit data
+   values (`Blocks`, `Data`, optional `AddBlocks` for ids above 255). Minecraft keeps the table it uses to upgrade old
+   worlds (`BlockStateData`, id << 4 | data to a 1.13 block state), so Minekit translates with it and then runs the
+   result through the data fixer from data version 1452, like any old file. Ids above 255 are modded and stay unknown
+   (`legacy_<id>_<data>`). Only `Materials` "Alpha" (Java Edition) is accepted; "Pocket" and "Classic" are refused
+   with the reason. Not translated: tile entities, entities, and the few blocks the table maps to a state that
+   depends on neighbors (such as fence connections), which are compared only by block and orientation anyway.
+4. **Readable errors.** The module keeps the reason of the last failure; the blueprint screen shows the file name and
+   the full reason, and the reason is logged at WARN. Warning and error cards wrap to six lines instead of three.
+5. **A 3D view of the whole structure.** The layer view showed one layer at a time, which made it hard to see what a
+   blueprint is. The *Layers* tab now switches between *Plan* (the layer view) and *3D*: the structure seen from one
+   of four corners at a 2:1 isometric angle, cut at a chosen layer so the inside can be seen, in the same colors as
+   the plan, including build status. It is painted in software into one texture (`IsometricView`, pure and unit
+   tested; `StructureTexture` uploads it): cubes are drawn from far to near along the viewing direction (`u + y + v`),
+   with three shades for the visible faces and edges on larger cubes; a cube whose three visible faces are covered by
+   opaque neighbors is skipped. Blocks without a map color (glass, torches) are drawn see-through. The texture is as
+   large as the box on the screen in real pixels (at most 2048 x 2048), painted on a background thread, and keeps
+   the cell drawn at each pixel, so the block under the mouse is shown like in the plan. Rejected: rendering real
+   block models in the screen (much more code against fast-changing rendering APIs, and slow for 100 000 blocks) and
+   a ghost of every block in the world (thousands of gizmo boxes per tick; the guide around the player stays as it
+   is).
