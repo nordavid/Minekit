@@ -79,6 +79,7 @@ public final class BlueprintModule implements MinekitModule {
 	private @Nullable ResolvedBlueprint active;
 	private @Nullable String loading;
 	private @Nullable String failedFile;
+	private @Nullable Component failureReason;
 	private @Nullable BlueprintProgress progress;
 	private @Nullable Placement progressPlacement;
 	private @Nullable String progressWorld;
@@ -283,6 +284,7 @@ public final class BlueprintModule implements MinekitModule {
 	public void select(String file) {
 		update(current -> current.withActive(file));
 		failedFile = null;
+		failureReason = null;
 	}
 
 	void delete(String file) {
@@ -300,9 +302,14 @@ public final class BlueprintModule implements MinekitModule {
 		notifications.info(Component.translatable("minekit.blueprint.deleted", file));
 	}
 
-	/** Why the active file could not be loaded, if it could not. */
+	/** The active file, if it could not be loaded. */
 	public Optional<String> failedFile() {
 		return Optional.ofNullable(failedFile);
+	}
+
+	/** Why the active file could not be loaded, if it could not. */
+	public Optional<Component> failureReason() {
+		return Optional.ofNullable(failureReason);
 	}
 
 	private void loadActive() {
@@ -329,13 +336,14 @@ public final class BlueprintModule implements MinekitModule {
 				failedFile = file;
 				Throwable cause = error instanceof java.util.concurrent.CompletionException && error.getCause() != null ? error.getCause() : error;
 				if (cause instanceof BlueprintException reason) {
-					notifications.error(Component.translatable("minekit.blueprint.load_failed", file, Component.translatable(reason.translationKey(),
-							reason.arguments())));
+					failureReason = Component.translatable(reason.translationKey(), reason.arguments());
+					LOGGER.warn("Could not load blueprint {}: {} {}", file, reason.reason(), java.util.Arrays.toString(reason.arguments()));
 				} else {
+					failureReason = Component.translatable("minekit.blueprint.error.read_failed", file);
 					LOGGER.error("Could not load blueprint {}", file, cause);
-					notifications.error(Component.translatable("minekit.blueprint.load_failed", file,
-							Component.translatable("minekit.blueprint.error.read_failed", file)));
 				}
+				// The blueprint screen shows the whole reason too, in case the card fades before it is read.
+				notifications.error(Component.translatable("minekit.blueprint.load_failed", file, failureReason));
 				return;
 			}
 			active = ResolvedBlueprint.resolve(file, blueprint);

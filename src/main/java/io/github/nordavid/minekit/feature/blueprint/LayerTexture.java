@@ -10,6 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.MapColor;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -22,6 +23,8 @@ final class LayerTexture implements AutoCloseable {
 	static final int UNKNOWN = 0xFFB04CA0;
 	static final int CORRECT = 0xFF6BCB8B;
 	static final int WRONG = 0xFFE5716F;
+	/** Blocks without a map color (glass, torches, ...): a pale blue-gray instead of black. */
+	static final int SEE_THROUGH = 0xFFB9D3DE;
 
 	private @Nullable DynamicTexture texture;
 	private int width;
@@ -67,15 +70,25 @@ final class LayerTexture implements AutoCloseable {
 		if (resolved.blueprint().palette().get(palette).isAir()) {
 			return EMPTY;
 		}
-		BlockState state = resolved.state(palette);
+		int base = blockColor(resolved.state(palette));
+		return progress == null || !progress.isTracked(index) ? base : tint(base, progress.status(index));
+	}
+
+	/** The map color of a block; {@link #UNKNOWN} for blocks this version does not know. */
+	static int blockColor(@Nullable BlockState state) {
 		if (state == null) {
 			return UNKNOWN;
 		}
-		int base = 0xFF000000 | state.getMapColor(EmptyBlockGetter.INSTANCE, BlockPos.ZERO).col;
-		if (progress == null || !progress.isTracked(index)) {
-			return base;
-		}
-		Status status = progress.status(index);
+		return seeThrough(state) ? SEE_THROUGH : 0xFF000000 | state.getMapColor(EmptyBlockGetter.INSTANCE, BlockPos.ZERO).col;
+	}
+
+	/** Blocks without a map color: maps leave them out, so they are mostly glass, plants on walls, torches and the like. */
+	static boolean seeThrough(BlockState state) {
+		return state.getMapColor(EmptyBlockGetter.INSTANCE, BlockPos.ZERO) == MapColor.NONE;
+	}
+
+	/** A block color tinted by build status: correct green, wrong red, missing dimmed, unchecked dimmed more. */
+	static int tint(int base, Status status) {
 		return switch (status) {
 			case CORRECT -> mix(base, CORRECT, 0.65);
 			case WRONG -> WRONG;

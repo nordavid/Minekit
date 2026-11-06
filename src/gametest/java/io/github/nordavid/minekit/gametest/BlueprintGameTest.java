@@ -11,6 +11,7 @@ import io.github.nordavid.minekit.feature.blueprint.BlueprintScreen;
 import io.github.nordavid.minekit.feature.blueprint.Placement;
 import io.github.nordavid.minekit.feature.blueprint.ResolvedBlueprint;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,13 +26,15 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtIo;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /**
- * Blueprints in the real client: real .litematic and .schem files (one broken, one with a block name from an older
- * version), the guide compared with blocks placed by commands, turning, the screen's tabs, importing by drag and drop,
- * and the measuring tool.
+ * Blueprints in the real client: real .litematic, .schem and .schematic files (one broken, one with a block name from an
+ * older version, one uncompressed MCEdit file with numeric ids), the guide compared with blocks placed by commands,
+ * turning, the screen's tabs with the plan and the 3D view, importing by drag and drop, and the measuring tool.
  */
 public final class BlueprintGameTest implements FabricClientGameTest {
 	/** 3 x 2 x 3: a stone floor with old-style "grass" in the middle, a stair facing north and a plank above. */
@@ -46,6 +49,10 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 			NbtIo.writeCompressed(litematic(), module.directory().resolve("tower.litematic"));
 			NbtIo.writeCompressed(spongeV3(), module.directory().resolve("slab.schem"));
 			Files.write(module.directory().resolve("broken.schem"), new byte[] {0x1f, (byte) 0x8b, 1, 2, 3});
+			// Uncompressed, like the files of some download sites.
+			try (DataOutputStream out = new DataOutputStream(Files.newOutputStream(module.directory().resolve("house.schematic")))) {
+				NbtIo.write(mcEdit(), out);
+			}
 		} catch (IOException e) {
 			throw new AssertionError("could not write test blueprints", e);
 		}
@@ -58,7 +65,8 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 			command.accept("time set noon");
 			connection.waitForClientboundPackets();
 
-			brokenFileFailsWithAReason(context, module);
+			brokenFileFailsWithAReason(context, runtime, module);
+			legacySchematicLoads(context, module);
 			BlockPos origin = context.computeOnClient(client -> client.player.blockPosition().offset(3, 0, 1));
 			guideFollowsTheWorld(context, module, command, connection, origin);
 			screenTabsAndImport(context, runtime, module);
@@ -66,12 +74,36 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 		}
 	}
 
-	private static void brokenFileFailsWithAReason(ClientGameTestContext context, BlueprintModule module) {
-		check(context.computeOnClient(client -> module.files()).equals(List.of("broken.schem", "slab.schem", "tower.litematic")),
-				"the three files are listed, got " + context.computeOnClient(client -> module.files()));
+	private static void brokenFileFailsWithAReason(ClientGameTestContext context, MinekitRuntime runtime, BlueprintModule module) {
+		check(context.computeOnClient(client -> module.files()).equals(List.of("broken.schem", "house.schematic", "slab.schem", "tower.litematic")),
+				"the four files are listed, got " + context.computeOnClient(client -> module.files()));
 		context.runOnClient(client -> module.select("broken.schem"));
 		context.waitFor(client -> module.failedFile().isPresent(), 200);
 		check(module.active().isEmpty(), "a broken file is not shown");
+		check(context.computeOnClient(client -> module.failureReason().map(reason -> reason.getContents() instanceof TranslatableContents contents
+				&& contents.getKey().equals("minekit.blueprint.error.damaged")).orElse(false)), "the reason is kept: the compressed data is damaged");
+		// The screen says why in full, not only the notification.
+		context.runOnClient(client -> action(runtime, "open_blueprints").run().run());
+		context.waitForScreen(BlueprintScreen.class);
+		context.waitTicks(2);
+		context.takeScreenshot("minekit-p6-00-failed");
+		context.getInput().pressKey(InputConstants.KEY_ESCAPE);
+		context.waitForScreen(null);
+	}
+
+	private static void legacySchematicLoads(ClientGameTestContext context, BlueprintModule module) {
+		context.runOnClient(client -> module.select("house.schematic"));
+		context.waitFor(client -> module.active().isPresent() || module.failedFile().isPresent(), 200);
+		check(module.active().isPresent(), "the MCEdit file loads, got " + context.computeOnClient(client -> module.failureReason().map(Component::getString)));
+		ResolvedBlueprint resolved = context.computeOnClient(client -> module.active().orElseThrow());
+		Blueprint blueprint = resolved.blueprint();
+		check(blueprint.format() == Blueprint.Format.MCEDIT && blueprint.blockCount() == 4, "four blocks of an MCEdit schematic, got "
+				+ blueprint.format() + " with " + blueprint.blockCount());
+		check(context.computeOnClient(client -> resolved.state(blueprint.paletteIndex(1, 0, 0)).is(Blocks.GRANITE)
+				&& net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(resolved.state(blueprint.paletteIndex(0, 1, 0)).getBlock()).toString()
+						.equals("minecraft:red_wool") && resolved.state(blueprint.paletteIndex(1, 1, 0)).is(Blocks.GLASS)),
+				"numeric ids and data values become granite, red wool and glass");
+		check(resolved.unknownBlocks().isEmpty(), "every block is known, got " + resolved.unknownBlocks());
 	}
 
 	private static void guideFollowsTheWorld(ClientGameTestContext context, BlueprintModule module, Consumer<String> command,
@@ -134,8 +166,21 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 		context.waitTicks(2);
 		context.takeScreenshot("minekit-p6-02-overview");
 		context.clickScreenButton("minekit.blueprint.tab.layers");
+		// The 3D view is painted on a background thread.
+		context.waitFor(client -> client.gui.screen() instanceof BlueprintScreen screen && screen.isStructureDrawn(), 200);
 		context.waitTicks(2);
-		context.takeScreenshot("minekit-p6-03-layers");
+		context.takeScreenshot("minekit-p6-03-layers-3d");
+		context.clickScreenButton("minekit.blueprint.view.turn_button");
+		context.clickScreenButton("minekit.blueprint.view.turn_button");
+		context.waitFor(client -> client.gui.screen() instanceof BlueprintScreen screen && screen.isStructureDrawn(), 200);
+		context.waitTicks(5);
+		context.takeScreenshot("minekit-p6-03b-layers-3d-turned");
+		context.clickScreenButton("minekit.blueprint.view.turn_button");
+		context.clickScreenButton("minekit.blueprint.view.turn_button");
+		context.clickScreenButton("minekit.blueprint.view.plan");
+		context.waitTicks(2);
+		context.takeScreenshot("minekit-p6-03c-layers-plan");
+		context.clickScreenButton("minekit.blueprint.view.whole");
 		context.clickScreenButton("minekit.blueprint.tab.materials");
 		context.waitTicks(2);
 		context.takeScreenshot("minekit-p6-04-materials");
@@ -242,6 +287,20 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 		root.putInt("MinecraftDataVersion", 3465);
 		root.put("Metadata", metadata);
 		root.put("Regions", regions);
+		return root;
+	}
+
+	/** MCEdit, 2 x 2 x 1, nested like the files of some sites: stone, granite (1:1); red wool (35:14), glass (20). */
+	private static CompoundTag mcEdit() {
+		CompoundTag body = new CompoundTag();
+		body.putShort("Width", (short) 2);
+		body.putShort("Height", (short) 2);
+		body.putShort("Length", (short) 1);
+		body.putString("Materials", "Alpha");
+		body.putByteArray("Blocks", new byte[] {1, 1, 35, 20});
+		body.putByteArray("Data", new byte[] {0, 1, 14, 0});
+		CompoundTag root = new CompoundTag();
+		root.put("Schematic", body);
 		return root;
 	}
 

@@ -84,6 +84,11 @@ public final class BlueprintProgress {
 		return STATUSES[status[index]];
 	}
 
+	/** A copy of every status, as {@link Status} ordinals, for painting on another thread. */
+	byte[] statusSnapshot() {
+		return status.clone();
+	}
+
 	public boolean isTracked(int index) {
 		int y = index / (blueprint.sizeX() * blueprint.sizeZ());
 		return range.contains(y) && !blueprint.palette().get(blueprint.paletteIndexAt(index)).isAir();
