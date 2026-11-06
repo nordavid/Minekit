@@ -40,8 +40,8 @@ The first manual test in the Modrinth instance found three problems:
 2. **The rules are chosen in the sort preview**, where their effect is visible. A row of small boxes under the
    result's hotbar shows each slot's rule as a dimmed icon. A click opens a picker with all rules, a description of
    the selected one, and *this item* for whatever is in that slot now. The picker takes all input while open
-   (arrow keys, Enter, Escape). The Inventory page lists the layout and offers *suggested layout* and *leave the
-   whole hotbar as is*.
+   (arrow keys, Enter, Escape). The Inventory page lists the layout and offers *suggested layout* and *reset hotbar
+   layout* (every slot back to *leave as is*).
 3. **Settings schema 2.** `inventory.json` stores `"hotbar": [9 rule ids]`, for example `"pickaxe"` or
    `"item:minecraft:torch"`. Schema 1 files are migrated: `protectHotbar: true` (or missing) becomes *leave as is* in
    every slot, `false` becomes *any item* in every slot. Unknown rules fall back to *leave as is* with a warning.
