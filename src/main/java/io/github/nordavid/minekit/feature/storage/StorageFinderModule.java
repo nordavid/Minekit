@@ -13,6 +13,7 @@ import io.github.nordavid.minekit.core.notification.NotificationService;
 import io.github.nordavid.minekit.core.persistence.JsonFileStore;
 import io.github.nordavid.minekit.core.persistence.LoadResult;
 import io.github.nordavid.minekit.core.screen.DashboardPages;
+import io.github.nordavid.minekit.core.world.WorldContext;
 import io.github.nordavid.minekit.core.storage.StorageBridge;
 import com.mojang.blaze3d.platform.InputConstants;
 import java.nio.file.Files;
@@ -27,13 +28,10 @@ import java.util.TreeMap;
 import java.util.function.UnaryOperator;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ServerData;
-import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.storage.LevelResource;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +48,7 @@ import org.slf4j.LoggerFactory;
 public final class StorageFinderModule implements MinekitModule {
 	public static final ModuleMetadata METADATA = new ModuleMetadata("storage_finder",
 			"minekit.module.storage_finder.name", "minekit.module.storage_finder.description", true);
-	private static final Logger LOGGER = LoggerFactory.getLogger("MINEKIT");
+	private static final Logger LOGGER = LoggerFactory.getLogger("Minekit");
 
 	private final Path directory;
 	private final ContainerTracker tracker;
@@ -191,15 +189,15 @@ public final class StorageFinderModule implements MinekitModule {
 	 * saved right away, so nothing is pending then. A world without any recorded container gets no file at all.
 	 */
 	private void syncContext(Minecraft minecraft) {
-		Optional<Context> now = currentContext(minecraft);
-		String id = now.map(Context::id).orElse(null);
+		Optional<WorldContext> now = WorldContext.current(minecraft);
+		String id = now.map(WorldContext::id).orElse(null);
 		if (Objects.equals(id, storeId)) {
 			return;
 		}
 		store = null;
 		storeId = id;
 		if (now.isPresent()) {
-			Context next = now.get();
+			WorldContext next = now.get();
 			JsonFileStore<StorageIndex> loaded = new JsonFileStore<>(directory.resolve(next.id() + ".json"), Clock.systemUTC(),
 					new StorageIndexCodec(next.label()));
 			if (Files.exists(loaded.file())) {
@@ -215,27 +213,5 @@ public final class StorageFinderModule implements MinekitModule {
 			store = loaded;
 			LOGGER.info("Storage index {}: {} containers", loaded.file().getFileName(), loaded.current().containers().size());
 		}
-	}
-
-	private record Context(String id, String label) {
-	}
-
-	private static Optional<Context> currentContext(Minecraft minecraft) {
-		if (minecraft.level == null || minecraft.player == null) {
-			return Optional.empty();
-		}
-		IntegratedServer singleplayer = minecraft.getSingleplayerServer();
-		if (singleplayer != null) {
-			Path folder = singleplayer.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize().getFileName();
-			if (folder == null) {
-				return Optional.empty();
-			}
-			return Optional.of(new Context(ContextIds.singleplayer(folder.toString()), singleplayer.getWorldData().getLevelName()));
-		}
-		ServerData server = minecraft.getCurrentServer();
-		if (server == null || server.ip == null || server.ip.isBlank()) {
-			return Optional.empty();
-		}
-		return Optional.of(new Context(ContextIds.multiplayer(server.ip), server.name));
 	}
 }

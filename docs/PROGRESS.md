@@ -1,10 +1,10 @@
-# MINEKIT progress
+# Minekit progress
 
 Phase definitions: [PROJECT_PLAN.md §11](../PROJECT_PLAN.md).
 
 ## Phase 0: Technical validation (done, 2026-11-06)
 
-Exit criterion met: MINEKIT launches on Minecraft 26.3 through the Modrinth App and is confirmed client-only.
+Exit criterion met: Minekit launches on Minecraft 26.3 through the Modrinth App and is confirmed client-only.
 
 - [x] Verify the current Fabric toolchain for Minecraft 26.3 ([ADR 0001](adr/0001-fabric-toolchain-and-client-only-setup.md))
 - [x] Generate the Fabric project (based on the official example mod, branch `26.3`)
@@ -14,7 +14,7 @@ Exit criterion met: MINEKIT launches on Minecraft 26.3 through the Modrinth App 
 - [x] Unit test that guards the client-only metadata
 - [x] Build the JAR
 - [x] Launch in the development client (`runClient`)
-- [x] Join an unmodified vanilla 26.3 server with MINEKIT on the client only
+- [x] Join an unmodified vanilla 26.3 server with Minekit on the client only
 - [x] Launch through a Modrinth App instance
 - [x] README with setup, build and Modrinth installation instructions
 
@@ -27,12 +27,12 @@ Exit criterion met: MINEKIT launches on Minecraft 26.3 through the Modrinth App 
 | Regression check of the test | With `"environment": "*"` the build fails as intended. Reverted. |
 | JAR contents | `minekit-0.1.0.jar` (3.5 KB): `MinekitClient.class`, `fabric.mod.json` with expanded versions, `LICENSE_minekit`. |
 | Reproducibility | `gradlew clean build` produces a byte-identical JAR (SHA-256 `509ce7e3…71ebbba`, same as the copy tested in Modrinth). |
-| `runClient` | Fabric Loader lists `minekit 0.1.0`, `minecraft 26.3`, `fabricloader 0.20.1`, `fabric-api 0.165.2+26.3`, `java 25`. Log line: `MINEKIT 0.1.0 initialized (client-only) on Minecraft 26.3 with Fabric Loader 0.20.1`. |
-| Vanilla server join | Official `server.jar` 26.3 (SHA-1 verified), no mods, offline mode on 127.0.0.1. The dev client joined (`Player687 joined the game`), stayed connected with no errors, and disconnected cleanly. The server needs nothing from MINEKIT. |
+| `runClient` | Fabric Loader lists `minekit 0.1.0`, `minecraft 26.3`, `fabricloader 0.20.1`, `fabric-api 0.165.2+26.3`, `java 25`. Log line: `Minekit 0.1.0 initialized (client-only) on Minecraft 26.3 with Fabric Loader 0.20.1`. |
+| Vanilla server join | Official `server.jar` 26.3 (SHA-1 verified), no mods, offline mode on 127.0.0.1. The dev client joined (`Player687 joined the game`), stayed connected with no errors, and disconnected cleanly. The server needs nothing from Minekit. |
 | `installToModrinth` | Without `minekit.modsDir`, and with a folder that does not exist, it fails with a clear message. With a valid folder it copies the JAR, removes an older `minekit-*.jar` and leaves Fabric API untouched. |
-| Modrinth App launch | New instance "MINEKIT Dev": Minecraft 26.3, Fabric Loader 0.20.1, Fabric API 0.165.2+26.3 from Modrinth, plus the MINEKIT JAR. `logs/latest.log` lists `minekit 0.1.0` and the init line. The player entered a single-player world and left it cleanly. No crash reports. Only warning: the vanilla `end_of_frame` message. |
+| Modrinth App launch | New instance "Minekit Dev": Minecraft 26.3, Fabric Loader 0.20.1, Fabric API 0.165.2+26.3 from Modrinth, plus the Minekit JAR. `logs/latest.log` lists `minekit 0.1.0` and the init line. The player entered a single-player world and left it cleanly. No crash reports. Only warning: the vanilla `end_of_frame` message. |
 
-Log noise that is **not** caused by MINEKIT and also appears with the vanilla server alone:
+Log noise that is **not** caused by Minekit and also appears with the vanilla server alone:
 
 - `Unable to locate English counter names in registry Perflib 009`: Windows performance-counter registry
   on this machine, read by Minecraft's system-info collection (OSHI).
@@ -62,7 +62,7 @@ Architecture: [ADR 0002](adr/0002-core-shell-architecture.md).
 - [x] Module contract (`MinekitModule`, `ModuleMetadata`, `ModuleContext`) and `ModuleManager`, which isolates failing modules
 - [x] Configuration in `config/minekit/config.json`: schema version, field validation, atomic writes, backup of
       corrupt or newer files, never overwrites an unreadable file
-- [x] Shortcut registration in a "MINEKIT" category (`K` dashboard, `J` Quick Actions) and conflict detection
+- [x] Shortcut registration in a "Minekit" category (`K` dashboard, `J` Quick Actions) and conflict detection
 - [x] Main dashboard: sidebar with Overview and Settings, scrollable content, remembers the last page, `K`/`Esc` close
 - [x] Quick Actions shell (first real module, can be switched off): search that ignores case and accents,
       keyboard navigation, disabled entries with a reason. Actions: open dashboard, open settings, change shortcuts
@@ -73,7 +73,7 @@ Architecture: [ADR 0002](adr/0002-core-shell-architecture.md).
 - [x] English and German translations
 - [x] Unit tests for all logic that does not need Minecraft
 - [x] In-game tests with the Fabric client gametest API (separate test mod, not shipped)
-- [ ] Manual acceptance in the Modrinth instance (0.2.0 is installed in "MINEKIT Dev"; not yet started)
+- [ ] Manual acceptance in the Modrinth instance (0.2.0 is installed in "Minekit Dev"; not yet started)
 
 ### Verification log (2026-11-06)
 
@@ -91,7 +91,7 @@ Architecture: [ADR 0002](adr/0002-core-shell-architecture.md).
 
 - **Small windows:** with three notifications on screen at the same time, the cards can overlap the right edge
   of the Quick Actions search field. They fade after 4 seconds. Possible later polish: move cards away from open
-  MINEKIT popups.
+  Minekit popups.
 - **Notification wrapping** is limited to three lines; longer messages end with "…".
 - **A module that failed to start** shows a disabled switch with the error as tooltip. It cannot be switched off
   from the UI until the next start. `ModuleManager` supports it, but the switch does not offer it yet.
@@ -130,7 +130,7 @@ Decisions taken without asking, because they are easy to change later:
 - [x] Inventory settings in `config/minekit/inventory.json` using the shared `JsonFileStore`
 - [x] Extension points: dashboard pages and Quick Actions can be added by any module
 - [x] Unit tests, randomized property test and in-game tests (single player and dedicated server)
-- [ ] Manual check in the Modrinth instance (0.3.0 is installed in "MINEKIT Dev"; not yet started)
+- [ ] Manual check in the Modrinth instance (0.3.0 is installed in "Minekit Dev"; not yet started)
 
 ### Verification log (2026-11-06)
 
@@ -143,14 +143,14 @@ Decisions taken without asking, because they are easy to change later:
 | Gametest: sorted again | The preview reports 0 changed slots and the *Sort* button is inactive. |
 | Gametest: creative mode | The Quick Action is unavailable with its reason, `R` opens nothing, `Enter` on the disabled entry does nothing. |
 | Gametest: item arrives mid-sort | A server command adds an emerald 8 ticks into the sort. The executor detects the change in slot 35, stops (`STOPPED` after 5 clicks) and puts the cursor item back. Totals equal the start plus the emerald, cursor empty. |
-| Gametest: dedicated server | Local Fabric dedicated server (no MINEKIT on it, the mod is client-only). Same sort over the network: 15 clicks, `COMPLETED`, same exact result. |
+| Gametest: dedicated server | Local Fabric dedicated server (no Minekit on it, the mod is client-only). Same sort over the network: 15 clicks, `COMPLETED`, same exact result. |
 | Screenshots | 15 checked by eye. Two layout bugs found and fixed: overlapping text in the preview, and a truncated reason in Quick Actions. |
-| JAR | `minekit-0.3.0.jar` (195 KB): 131 files, no gametest classes, no mixins, still `"environment": "client"`. Installed in "MINEKIT Dev" (SHA-256 matches). |
+| JAR | `minekit-0.3.0.jar` (195 KB): 131 files, no gametest classes, no mixins, still `"environment": "client"`. Installed in "Minekit Dev" (SHA-256 matches). |
 
 ### Known risks and limitations
 
 - **Corrections later than 0.5 s:** success means "no correction within 10 ticks after the last click". A server that
-  sends corrections later would make MINEKIT report success early. The server's state is authoritative anyway, and
+  sends corrections later would make Minekit report success early. The server's state is authoritative anyway, and
   the next preview shows the real inventory. A server that delays or rejects clicks on purpose could not be tested
   with the Fabric test server. The "item arrives mid-sort" test covers the reaction to server-side changes.
 - **Speed:** about 10 clicks per second (one click every 2 ticks) by design. A full inventory takes a few seconds.
@@ -184,7 +184,7 @@ owner: **variant A**, server recipe book plus vanilla defaults from the game fil
 - [x] Transparent counting: collected, used or given away, unclear (rules shown on the page)
 - [x] Goals: from the item in hand, ±64, or from the Crafting Assistant ("Add as goals"); progress in HUD and page
 - [x] HUD element "Resource session" (movable and hideable like all HUD elements)
-- [ ] Manual check in the Modrinth instance (0.4.0 installed in "MINEKIT Dev"; not yet started)
+- [ ] Manual check in the Modrinth instance (0.4.0 installed in "Minekit Dev"; not yet started)
 
 ### Verification log (2026-11-06)
 
@@ -230,7 +230,7 @@ Architecture: [ADR 0005](adr/0005-storage-index-and-smart-deposit.md).
 - [x] Panel swallows mouse press and release, so the cursor item is never dropped by a click on it
 - [x] Crafting Assistant shows stored amounts of missing materials and intermediate products
 - [x] Container/world scoping (hashed ids, no addresses in plain text)
-- [ ] Manual check in the Modrinth instance (0.5.0 installed in "MINEKIT Dev"; not yet started)
+- [ ] Manual check in the Modrinth instance (0.5.0 installed in "Minekit Dev"; not yet started)
 
 ### Verification log (2026-11-06)
 
@@ -273,7 +273,7 @@ The project owner tested 0.5.0 in the Modrinth instance and reported three probl
   this item, keep empty. Chosen with boxes under the hotbar in the sort preview; the Inventory page lists the layout
   and has a suggested layout. Settings schema 2 with migration from schema 1.
 - [x] Scrollbars in all lists (dashboard, Crafting Assistant, Storage Finder) can be dragged and clicked.
-- [x] Gametests click MINEKIT controls with the real mouse where it matters (`GameTestMouse`), so a covered control
+- [x] Gametests click Minekit controls with the real mouse where it matters (`GameTestMouse`), so a covered control
   can no longer pass a test.
 - [ ] Manual check in the Modrinth instance (0.5.1)
 
@@ -334,3 +334,25 @@ Architecture: [ADR 0007](adr/0007-loadouts-and-quick-action-configuration.md).
 - **Armor from a chest** cannot be equipped in the chest screen; apply the loadout in the inventory afterwards.
 - **Stackable items in armor positions** (carved pumpkin) are reported as missing.
 - **Quick Actions close an open container**, so container features stay on the buttons next to the container (⇩, ⚒).
+
+## Phase 5.1: Fixes after the second manual test (done, 2026-11-06, version 0.6.1)
+
+The project owner tested 0.6.0. From this version on, the project uses git: `main` holds verified versions (tags
+`v0.6.0`, `v0.6.1`), each round of work happens on a branch with one commit per change.
+
+- [x] Name written as **Minekit** instead of MINEKIT (UI, mod metadata, logs, docs)
+- [x] Inventory page: "Reset hotbar layout" instead of "Leave the whole hotbar as is", with a tooltip
+- [x] Crafting Assistant: every craftable item is listed (it stopped at 200, "854 more"); without a search the list is
+  grouped like the creative inventory, and arrows above it show one category; the hint before an item is chosen is
+  centered and mentions browsing
+- [x] Resource sessions belong to the world they were started in (they were global)
+- [x] Mod icon (`assets/minekit/icon.png`, drawn by `tools/make_icon.py`), current description in `fabric.mod.json`
+- [x] README: how to share Minekit with a friend (Modrinth modpack export, or the JAR plus Fabric API)
+- [ ] Manual check in the Modrinth instance (0.6.1)
+
+### Verification log (2026-11-06)
+
+| Check | Result |
+|---|---|
+| Unit tests | 149 of 149 passed. New: sessions of two worlds are independent (only the world's own session counts, pausing all, ending one keeps the other); schema 1 migration ends the old global session into the history. |
+| Gametests | All six classes pass. The crafting test checks that every craftable item is listed (no cut-off) and that the creative categories are offered; the phase 5 test checks on the dedicated server that the singleplayer world's session is neither shown nor running there. |

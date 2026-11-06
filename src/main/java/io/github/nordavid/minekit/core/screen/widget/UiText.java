@@ -8,7 +8,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
 
-/** Text helpers shared by MINEKIT widgets. MINEKIT draws flat text without drop shadow. */
+/** Text helpers shared by Minekit widgets. Minekit draws flat text without drop shadow. */
 public final class UiText {
 	private static final String ELLIPSIS = "…";
 

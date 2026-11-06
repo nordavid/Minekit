@@ -43,7 +43,7 @@ import net.minecraft.world.item.ItemStack;
 /**
  * Phase 5 in the real client: Quick Actions pinned with Ctrl+P and the star, run with a number key; actions for the
  * held item; a loadout saved, compared and applied in the inventory; a loadout taken from a chest (single player and
- * a dedicated server); the side panels sharing their space; and the dashboard pages. Clicks on MINEKIT controls use
+ * a dedicated server); the side panels sharing their space; and the dashboard pages. Clicks on Minekit controls use
  * the real mouse.
  */
 public final class LoadoutQuickActionGameTest implements FabricClientGameTest {
@@ -74,6 +74,11 @@ public final class LoadoutQuickActionGameTest implements FabricClientGameTest {
 				TestDedicatedServerConnection connection = server.connect()) {
 			connection.waitForChunksRender();
 			server.runCommand("gamemode survival @a");
+			ResourceTrackerModule resources = (ResourceTrackerModule) runtime.modules().module(ResourceTrackerModule.METADATA.id()).orElseThrow();
+			context.waitTicks(2);
+			check(context.computeOnClient(client -> resources.currentSession() == null && resources.tracker().open().size() == 1
+					&& resources.tracker().open().values().stream().noneMatch(session -> session.isRunning())),
+					"the singleplayer world's session stays there, paused, and is not shown on the server");
 			BlockPos chest = context.computeOnClient(client -> client.player.blockPosition()).offset(2, 0, 0);
 			loadoutFromAChest(context, runtime, loadouts, server, connection, chest, "server");
 		}
@@ -145,9 +150,9 @@ public final class LoadoutQuickActionGameTest implements FabricClientGameTest {
 
 		ResourceTrackerModule resources = (ResourceTrackerModule) runtime.modules().module(ResourceTrackerModule.METADATA.id()).orElseThrow();
 		context.runOnClient(client -> action(runtime, "goal_held_item").run().run());
-		int goal = context.computeOnClient(client -> resources.tracker().current().goals().getOrDefault("minecraft:iron_pickaxe", 0));
+		int goal = context.computeOnClient(client -> resources.currentSession().goals().getOrDefault("minecraft:iron_pickaxe", 0));
 		check(goal == 64, "the held item becomes a goal of a new session, got " + goal);
-		context.runOnClient(client -> resources.stop());
+		// The session stays open; it belongs to this world (checked again on the dedicated server).
 	}
 
 	private static void loadoutInTheInventory(ClientGameTestContext context, MinekitRuntime runtime, LoadoutModule loadouts, Consumer<String> command,
@@ -377,7 +382,7 @@ public final class LoadoutQuickActionGameTest implements FabricClientGameTest {
 
 	private static void check(boolean condition, String description) {
 		if (!condition) {
-			throw new AssertionError("MINEKIT phase 5 gametest failed: " + description);
+			throw new AssertionError("Minekit phase 5 gametest failed: " + description);
 		}
 	}
 }

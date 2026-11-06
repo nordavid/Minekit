@@ -85,7 +85,7 @@ public final class ResourceTrackerGameTest implements FabricClientGameTest {
 			context.runOnClient(client -> toggle.run().run());
 			context.waitTick();
 			ResourceTracker tracker = context.computeOnClient(client -> module.tracker());
-			check(tracker.current() == null && tracker.history().size() == 1, "session ended into the history");
+			check(tracker.open().isEmpty() && tracker.history().size() == 1, "session ended into the history");
 			String saved;
 			try {
 				saved = Files.readString(runtime.dataDirectory().resolve("resource-sessions.json"));
@@ -109,12 +109,12 @@ public final class ResourceTrackerGameTest implements FabricClientGameTest {
 	}
 
 	private static ResourceSession session(ClientGameTestContext context, ResourceTrackerModule module) {
-		return context.computeOnClient(client -> module.tracker().current());
+		return context.computeOnClient(client -> module.currentSession());
 	}
 
 	private static void check(boolean condition, String description) {
 		if (!condition) {
-			throw new AssertionError("MINEKIT resource tracker gametest failed: " + description);
+			throw new AssertionError("Minekit resource tracker gametest failed: " + description);
 		}
 	}
 }

@@ -1,10 +1,10 @@
-# MINEKIT --- Product & Technical Development Plan
+# Minekit --- Product & Technical Development Plan
 
 > **Project type:** Minecraft Java Edition client-side utility mod\
 > **Target Minecraft version:** 26.3\
 > **Mod loader:** Fabric\
 > **Launcher / test environment:** Modrinth App\
-> **Working name:** MINEKIT\
+> **Working name:** Minekit\
 > **Document status:** Initial implementation specification\
 > **Primary goal:** Make ordinary Minecraft gameplay more convenient
 > through practical tools, intelligent organization, planning and safe
@@ -14,14 +14,14 @@
 
 ## 1. Product vision
 
-MINEKIT is a modular, client-side utility suite for Minecraft Java
+Minekit is a modular, client-side utility suite for Minecraft Java
 Edition. It combines inventory management, crafting and resource
 planning, storage discovery, building assistance, quick actions,
 equipment loadouts and smart item depositing in one consistent
 interface.
 
-MINEKIT must work when installed only on the local player's client.
-Other players must not need MINEKIT, and the server must not need a
+Minekit must work when installed only on the local player's client.
+Other players must not need Minekit, and the server must not need a
 plugin, datapack, configuration change, custom command or custom network
 protocol.
 
@@ -113,7 +113,7 @@ modules.
 -   Autonomous farming, mining, combat or movement.
 -   Automatically placing blueprint blocks.
 -   Reading unopened or inaccessible container inventories.
--   Features that depend on every other player installing MINEKIT.
+-   Features that depend on every other player installing Minekit.
 -   A cloud account, online backend or mandatory telemetry.
 
 ------------------------------------------------------------------------
@@ -172,14 +172,14 @@ the limitation and disable or omit that behavior.
 
 Normal vanilla inventory clicks may result in the same standard
 inventory packets Minecraft normally sends. This is expected client
-behavior, not a custom MINEKIT protocol. The server remains
+behavior, not a custom Minekit protocol. The server remains
 authoritative and may reject actions.
 
 ------------------------------------------------------------------------
 
 ## 4. Product architecture
 
-Build MINEKIT as a modular application with a small core and independent
+Build Minekit as a modular application with a small core and independent
 feature modules.
 
 ### 4.1 Suggested package structure
@@ -293,7 +293,7 @@ scripting engine unless a concrete requirement justifies it.
 
 ### 5.1 Overall experience
 
-MINEKIT should feel like a polished, modern utility interface integrated
+Minekit should feel like a polished, modern utility interface integrated
 into Minecraft.
 
 Use three layers:
@@ -313,7 +313,7 @@ must be movable, hideable and configurable.
 Suggested navigation:
 
 ``` text
-MINEKIT
+Minekit
 ├── Overview
 ├── Inventory
 │   ├── Sort
@@ -489,7 +489,7 @@ opening every chest again.
 A client-only mod cannot inspect arbitrary unopened containers in the
 world. It must not pretend otherwise.
 
-MINEKIT can catalogue contents only when those contents are legitimately
+Minekit can catalogue contents only when those contents are legitimately
 sent to the client, for example when the player opens a chest or other
 supported container and the client receives its inventory state.
 
@@ -613,7 +613,7 @@ demand.
 
 -   Import a file from a user-selected local file.
 -   Validate the file before parsing.
--   Show a preview in the MINEKIT blueprint screen.
+-   Show a preview in the Minekit blueprint screen.
 -   Render a ghost/hologram structure in the world.
 -   Support moving, rotating and mirroring the preview.
 -   Show overall dimensions and block count.
@@ -630,7 +630,7 @@ demand.
 
 ### Manual construction only
 
-MINEKIT must not automatically place blueprint blocks. The player places
+Minekit must not automatically place blueprint blocks. The player places
 blocks through normal gameplay.
 
 The blueprint module is a visual guide and planning tool, not a printer
@@ -652,7 +652,7 @@ malformed or deeply nested compressed data. - Set configurable limits
 for memory usage. - Reject invalid palette indexes and out-of-range
 positions. - Do not execute scripts or embedded code from imported
 files. - Handle parsing failures without crashing Minecraft. - Never
-overwrite source files. - Store imported files in a dedicated MINEKIT
+overwrite source files. - Store imported files in a dedicated Minekit
 directory or reference them safely.
 
 ### Acceptance criteria
@@ -671,7 +671,7 @@ directory or reference them safely.
 
 ### Purpose
 
-Provide fast access to common MINEKIT actions without navigating the
+Provide fast access to common Minekit actions without navigating the
 full dashboard.
 
 ### MVP behavior
@@ -687,7 +687,7 @@ full dashboard.
 
 ### Initial actions
 
--   Open MINEKIT dashboard.
+-   Open Minekit dashboard.
 -   Sort inventory using selected profile.
 -   Open Crafting Assistant.
 -   Open Storage Finder.
@@ -757,7 +757,7 @@ every stack.
 ### MVP behavior
 
 When a supported container is open, the user invokes Smart Deposit.
-MINEKIT: - Identifies the currently open container and player inventory
+Minekit: - Identifies the currently open container and player inventory
 slots. - Uses the selected deposit profile or category rules. - Finds
 matching stacks and compatible partial stacks. - Previews which items
 will be moved. - Executes normal inventory clicks or other standard
@@ -856,7 +856,7 @@ to explicit, versioned data-transfer models.
 
 ## 8. Performance and reliability
 
-MINEKIT must not introduce noticeable gameplay lag.
+Minekit must not introduce noticeable gameplay lag.
 
 Requirements: - Avoid scanning the entire world every tick. - Prefer
 event-driven updates. - Use bounded work queues for expensive tasks. -
@@ -879,7 +879,7 @@ the correct thread.
 
 This is a core product requirement, not an optional quality attribute.
 
-MINEKIT must: - Work without any server-side installation. - Avoid
+Minekit must: - Work without any server-side installation. - Avoid
 custom network payloads and custom commands. - Avoid exploiting bugs or
 bypassing anti-cheat. - Use only information legitimately available to
 the local client. - Respect server-authoritative inventory state. - Stop
@@ -933,10 +933,10 @@ every UI screen later.
 Deliverables: - Verify the current Fabric toolchain for Minecraft
 26.3. - Generate the Fabric project. - Configure Gradle and Java. -
 Create client-only metadata and entrypoint. - Build and launch a minimal
-MINEKIT JAR in a Modrinth instance. - Add a README with exact setup and
+Minekit JAR in a Modrinth instance. - Add a README with exact setup and
 build instructions. - Confirm no server-side component is required.
 
-**Exit criteria:** MINEKIT launches on Minecraft 26.3 through the
+**Exit criteria:** Minekit launches on Minecraft 26.3 through the
 Modrinth App and is confirmed client-only.
 
 ### Phase 1 --- Core shell and UI
@@ -1073,7 +1073,7 @@ server dependency as a workaround without explicit approval.
 
 A feature is complete only when: - It has a clear user-facing purpose. -
 It is independently configurable where appropriate. - It uses the shared
-MINEKIT UI and architecture. - It respects client-only constraints. - It
+Minekit UI and architecture. - It respects client-only constraints. - It
 handles missing, stale and invalid data. - It has tests for its core
 logic. - It has been tested in-game where applicable. - It does not
 cause item loss or unintended actions. - Its documentation and known
@@ -1118,7 +1118,7 @@ product features yet.
 First: 1. Inspect the repository. 2. Verify the current official Fabric
 toolchain for Minecraft 26.3. 3. Generate or adapt the minimal Fabric
 client project. 4. Configure client-only metadata and the client
-entrypoint. 5. Add a minimal MINEKIT initialization log message. 6.
+entrypoint. 5. Add a minimal Minekit initialization log message. 6.
 Build the JAR. 7. Provide exact instructions for installing the JAR into
 a Modrinth App instance. 8. Verify that the game launches and that no
 server-side component is required. 9. Report the exact versions selected

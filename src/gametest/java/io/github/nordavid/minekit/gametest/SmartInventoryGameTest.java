@@ -312,7 +312,7 @@ public final class SmartInventoryGameTest implements FabricClientGameTest {
 
 	private static void check(boolean condition, String description) {
 		if (!condition) {
-			throw new AssertionError("MINEKIT inventory gametest failed: " + description);
+			throw new AssertionError("Minekit inventory gametest failed: " + description);
 		}
 	}
 }

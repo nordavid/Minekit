@@ -234,7 +234,7 @@ public final class MinekitClientGameTest implements FabricClientGameTest {
 
 	private static void check(boolean condition, String description) {
 		if (!condition) {
-			throw new AssertionError("MINEKIT gametest failed: " + description);
+			throw new AssertionError("Minekit gametest failed: " + description);
 		}
 	}
 }

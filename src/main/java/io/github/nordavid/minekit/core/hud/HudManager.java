@@ -18,14 +18,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Draws all MINEKIT HUD elements according to their visibility and position settings.
+ * Draws all Minekit HUD elements according to their visibility and position settings.
  *
  * <p>Hooked into the game twice: as one Fabric HUD element (in-game HUD, hidden with F1) and after every screen is
  * drawn (for elements that {@linkplain MinekitHudElement#drawOverScreens() draw over screens}). An element that throws
  * while drawing is switched off for the rest of the session instead of crashing the game or flooding the log.
  */
 public final class HudManager {
-	private static final Logger LOGGER = LoggerFactory.getLogger("MINEKIT");
+	private static final Logger LOGGER = LoggerFactory.getLogger("Minekit");
 
 	private final ConfigManager config;
 	private final List<MinekitHudElement> elements = new ArrayList<>();

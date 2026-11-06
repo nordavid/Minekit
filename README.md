@@ -1,23 +1,23 @@
-# MINEKIT
+# Minekit
 
-Client-side utility suite for Minecraft Java Edition (Fabric). MINEKIT runs only on your own client.
+Client-side utility suite for Minecraft Java Edition (Fabric). Minekit runs only on your own client.
 Servers and other players need nothing installed.
 
-> **Status (0.6.0):** Phases 1 to 5 are implemented and tested in the real game client: dashboard, settings, Quick
+> **Status (0.6.1):** Phases 1 to 5 are implemented and tested in the real game client: dashboard, settings, Quick
 > Actions (pinned, numbered, hidden, recent), notifications, inventory sorting with preview and hotbar layout (also on
 > a dedicated server), the Crafting Assistant, the Resource Tracker, the Storage Finder, Smart Deposit and the
 > Loadout Manager. Manual checks in the Modrinth instance are still open. Building tools follow in a later phase. See [docs/PROGRESS.md](docs/PROGRESS.md) and [PROJECT_PLAN.md](PROJECT_PLAN.md).
 
-## Using MINEKIT
+## Using Minekit
 
 | Key (default) | What it does |
 |---|---|
-| `K` | Opens the MINEKIT dashboard. Press `K` or `Esc` again to close it. |
+| `K` | Opens the Minekit dashboard. Press `K` or `Esc` again to close it. |
 | `J` | Opens Quick Actions: type to search, `↑`/`↓` to select, `Enter` to run, `Esc` to close. `1`–`9` run the pinned actions, `Ctrl`+`P` pins the selected one. |
 | `R` | Opens the sort preview, in game or in your inventory. While a sort runs, `R` cancels it. |
 | `G` | In an open chest, barrel, shulker box or similar: opens the Smart Deposit preview. While a deposit runs, `G` stops it. |
 
-All keys can be changed under *Options → Controls → Key Binds → MINEKIT*, or from the dashboard
+All keys can be changed under *Options → Controls → Key Binds → Minekit*, or from the dashboard
 (*Settings → Change shortcuts…*). `K` and `J` work in game with no other screen open. The Crafting Assistant, the
 resource session, the Storage Finder and the Loadout Manager also have shortcuts there; they are unbound by
 default.
@@ -47,7 +47,7 @@ default.
    *shovel*, *hoe*, *food*, *blocks*, *utility*, *this item* (whatever is in that slot now) or *keep empty*. A tool or
    weapon slot gets your best one (by material), a food slot your most filling food. The preview updates at once.
    The *Inventory* page of the dashboard has a suggested layout to start from.
-4. Press **Sort**. Your inventory opens and MINEKIT moves the items with normal clicks, about ten per second, so you
+4. Press **Sort**. Your inventory opens and Minekit moves the items with normal clicks, about ten per second, so you
    can watch. Press `R` or close the inventory to stop at any time.
 
 Rules: hotbar slots set to *leave as is* are never touched, armor, offhand and the crafting grid neither,
@@ -58,7 +58,9 @@ available in creative or spectator mode, while riding or while a chest or other 
 ### Planning a craft (Crafting Assistant)
 
 Open it from the dashboard (*Crafting*) or Quick Actions → *Open Crafting Assistant*. Search an item on the left,
-set the quantity at the top right. The plan shows:
+or browse: without a search, the list shows every craftable item, grouped and ordered like the creative inventory
+(Building Blocks, Redstone Blocks, Tools & Utilities, ...); the arrows above the list show one category at a time.
+Set the quantity at the top right. The plan shows:
 
 - **Materials to gather.** For each one you see how much you need in total and how much is still missing after
   counting your inventory. Switch off *Use what is in my inventory* to see the full amounts.
@@ -77,24 +79,26 @@ Change the plan with the small buttons:
 Recipes come from your recipe book, i.e. what the server unlocked for you, plus the vanilla recipes built into the
 game. Steps using a vanilla recipe are marked "vanilla default", because a server can change recipes. Raw materials
 such as cobblestone, raw iron or redstone are planned as "gather". If you hold the inputs of an unusual recipe, for
-example iron blocks, MINEKIT plans to use them.
+example iron blocks, Minekit plans to use them.
 
 ### Tracking resources (Resource Tracker)
 
-Start a session from the dashboard (*Resources*) or Quick Actions → *Start or stop resource session*. While it runs,
-MINEKIT compares the item totals in your inventory twice a second:
+Start a session from the dashboard (*Resources*) or Quick Actions → *Start or stop resource session*. A session
+belongs to the world or server you start it in: it only counts there, it pauses when you leave, and every world has
+its own (the dashboard mentions sessions paused in other worlds). While it runs, Minekit compares the item totals
+in your inventory twice a second:
 
 - **Collected:** items gained while no screen is open (mining, picking up, receiving).
 - **Used or given away:** items lost while no screen is open (placing, eating, throwing).
 - **Unclear:** changes while your inventory, a chest or another screen is open, in creative mode or when you die.
-  MINEKIT does not guess their cause.
+  Minekit does not guess their cause.
 
 Moving items between slots never counts. Goals ("128 iron ingots") show their progress in the HUD panel at the top
 left and on the page. Sessions can be paused, renamed and ended. Ended sessions stay in the history (the last 30).
 
 ### Finding items in your storage (Storage Finder)
 
-MINEKIT remembers what was in every chest, barrel, shulker box, hopper, dispenser, dropper and your ender chest
+Minekit remembers what was in every chest, barrel, shulker box, hopper, dispenser, dropper and your ender chest
 **when you close it**. Open the finder with Quick Actions → *Open Storage Finder* or from the dashboard (*Storage*).
 Search an item on the left. The right side then lists every container holding it, with:
 
@@ -127,7 +131,7 @@ explains it in the game. Choose the **profile**:
 | Food and farming | food, seeds, crops, saplings, bone meal |
 | Custom | the categories you select on the *Deposit* page |
 
-Press **Deposit** (or `Enter`). MINEKIT tops up partial stacks first, then fills empty slots, with normal clicks
+Press **Deposit** (or `Enter`). Minekit tops up partial stacks first, then fills empty slots, with normal clicks
 about ten times per second. Whatever does not fit stays in your inventory, in its slot. Your **hotbar** and your
 **favorites** (from the sort preview) always stay with you; favorites can be included for a single deposit in the
 panel. Smart Deposit stops when you close the container, press `G`, or anything unexpected happens, and then tells
@@ -179,7 +183,7 @@ Everything is stored in `config/minekit/` inside the game folder (the Modrinth i
 - `storage-index/`: one file per world (`sp-…`) or server (`mp-…`). The name is a hash, so server addresses are
   not stored in plain text.
 
-If a file is damaged, MINEKIT keeps a copy (`*.corrupt-<time>`), starts with defaults and tells you so.
+If a file is damaged, Minekit keeps a copy (`*.corrupt-<time>`), starts with defaults and tells you so.
 
 ## Versions
 
@@ -238,7 +242,7 @@ the execution, and the loadout test that a container only ever gives and that ap
 ```
 
 In-game tests using the Fabric client gametest API. They **open a Minecraft window**, create a test world and use
-MINEKIT like a player would:
+Minekit like a player would:
 - open the dashboard with `K`, switch pages, toggle settings and check the config file
 - search and run Quick Actions with `J`
 - sort a messy inventory with `R` in single player and on a local dedicated server (real network)
@@ -258,7 +262,7 @@ MINEKIT like a player would:
   in single player and on the dedicated server (the server's chest only gives); check that Smart Deposit and the
   loadout panel never stay open together
 
-They are a separate test mod (`src/gametest`), never packaged into the MINEKIT JAR, and not part of `build`. The
+They are a separate test mod (`src/gametest`), never packaged into the Minekit JAR, and not part of `build`. The
 dedicated test server accepts the Minecraft EULA (`eula = true` in `build.gradle`) and runs only locally in
 `build/run`. Screenshots go to `build/run/clientGameTest/screenshots/`. A failure ends the run with "Client
 gametests failed" in the log and a failed Gradle task.
@@ -269,7 +273,7 @@ gametests failed" in the log and a failed Gradle task.
 ./gradlew runClient
 ```
 
-This starts Minecraft 26.3 with MINEKIT and Fabric API, using an offline development account. Game files go
+This starts Minecraft 26.3 with Minekit and Fabric API, using an offline development account. Game files go
 to `run/` (ignored by git). To join a server straight away:
 
 ```bash
@@ -279,7 +283,7 @@ to `run/` (ignored by git). To join a server straight away:
 A successful start logs:
 
 ```text
-[MINEKIT] MINEKIT 0.5.1 initialized (client-only) on Minecraft 26.3 with Fabric Loader 0.20.1
+[Minekit] Minekit 0.6.1 initialized (client-only) on Minecraft 26.3 with Fabric Loader 0.20.1
 ```
 
 On the first start of a fresh `run/` folder Minecraft shows the accessibility onboarding screen, and the
@@ -297,14 +301,14 @@ online-mode=false
 white-list=false
 ```
 
-Vanilla 26.3 creates `white-list=true` by default. The server needs nothing else: no Fabric, no MINEKIT.
+Vanilla 26.3 creates `white-list=true` by default. The server needs nothing else: no Fabric, no Minekit.
 
 ## Install into a Modrinth App instance
 
 The Modrinth App is only the launcher. Gradle builds the JAR.
 
 1. **Create a test instance (once).** In the Modrinth App choose *Create instance*. Select loader **Fabric**,
-   game version **26.3** and Fabric Loader **0.20.1** or newer. A name such as `MINEKIT Dev` works.
+   game version **26.3** and Fabric Loader **0.20.1** or newer. A name such as `Minekit Dev` works.
 2. **Add Fabric API.** Open the instance, *Add content*, search for **Fabric API** and install a 26.3 version
    (0.165.2+26.3 or newer).
 3. **Find the instance's `mods` folder.** In the instance menu choose *Open folder*. The `mods` folder is
@@ -312,28 +316,43 @@ The Modrinth App is only the launcher. Gradle builds the JAR.
 4. **Copy the JAR**, either by hand from `build/libs/` or with Gradle:
 
    ```bash
-   ./gradlew installToModrinth -Pminekit.modsDir="C:/Users/<you>/AppData/Roaming/ModrinthApp/profiles/MINEKIT Dev/mods"
+   ./gradlew installToModrinth -Pminekit.modsDir="C:/Users/<you>/AppData/Roaming/ModrinthApp/profiles/Minekit Dev/mods"
    ```
 
    To avoid typing the path each time, put it in your personal `~/.gradle/gradle.properties`:
 
    ```properties
-   minekit.modsDir=C:/Users/<you>/AppData/Roaming/ModrinthApp/profiles/MINEKIT Dev/mods
+   minekit.modsDir=C:/Users/<you>/AppData/Roaming/ModrinthApp/profiles/Minekit Dev/mods
    ```
 
    The task builds the JAR, removes older `minekit-*.jar` files from that folder so Fabric does not load the
    mod twice, and copies the new one. It does not touch any other file.
 5. **Start the instance** in the Modrinth App. Check the log (instance, *Logs*, or `logs/latest.log` in the
-   instance folder) for the `MINEKIT ... initialized (client-only)` line.
+   instance folder) for the `Minekit ... initialized (client-only)` line.
+
+## Share Minekit with a friend
+
+Your friend needs the Modrinth App and nothing on any server. The easiest way is a modpack file:
+
+1. In the Modrinth App, open your Minekit instance, then the instance menu (⋮) → **Export modpack**. Keep Minekit
+   (under `mods`) selected and export. You get a `.mrpack` file. It contains the Minekit JAR and only a reference to
+   Fabric API, which the Modrinth App downloads from Modrinth.
+2. Send the `.mrpack` file. Your friend chooses **Create instance** → **Import from file** (or drops the file onto
+   the app). The instance has Minecraft 26.3, Fabric Loader, Fabric API and Minekit, ready to play.
+
+Without a modpack: send `build/libs/minekit-<version>.jar`. Your friend creates a Fabric 26.3 instance, installs
+**Fabric API** through *Add content*, and drops the JAR into the instance (*Add content* → *Add from file*, or into
+the `mods` folder). For later updates, a new JAR replaces the old one in the same instance; settings stay in
+`config/minekit/`.
 
 ## Client-only guarantees
 
-- `fabric.mod.json` declares `"environment": "client"`. Fabric Loader does not load MINEKIT on dedicated
+- `fabric.mod.json` declares `"environment": "client"`. Fabric Loader does not load Minekit on dedicated
   servers.
 - The only entrypoint is the `client` entrypoint `io.github.nordavid.minekit.MinekitClient`.
 - No mixins, no custom network payloads, no commands, no server-side dependencies.
-- Checked in Phase 0: the development client with MINEKIT joined an unmodified vanilla 26.3 server, and a
-  Modrinth App instance with MINEKIT and Fabric API started and loaded a single-player world.
+- Checked in Phase 0: the development client with Minekit joined an unmodified vanilla 26.3 server, and a
+  Modrinth App instance with Minekit and Fabric API started and loaded a single-player world.
 
 ## Project layout
 
@@ -372,10 +391,10 @@ docs/PROGRESS.md            phase checklist and verification log
   Check `JAVA_HOME`.
 - **Modrinth instance crashes with "Incompatible mods" or "requires fabric-api":** Fabric API is missing or
   too old in the instance, or the instance is not on Minecraft 26.3.
-- **"Duplicate mod" error:** two MINEKIT JARs are in the `mods` folder. Delete the older one, or use
+- **"Duplicate mod" error:** two Minekit JARs are in the `mods` folder. Delete the older one, or use
   `installToModrinth`, which does that for you.
 - **`K` or `J` does nothing:** another mod may use the same key. The dashboard's Overview lists conflicts. Rebind
-  under *Controls → Key Binds → MINEKIT*. If `J` shows "Quick Actions is off", turn the module on in the dashboard
+  under *Controls → Key Binds → Minekit*. If `J` shows "Quick Actions is off", turn the module on in the dashboard
   settings.
 
 ## License

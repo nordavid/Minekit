@@ -83,9 +83,10 @@ final class InventoryDashboardPage implements DashboardPage {
 		FlatButton suggested = builder.widget(new FlatButton(0, 0, content.width(), MinekitTheme.ROW_HEIGHT,
 				Component.translatable("minekit.inventory.hotbar_suggested"), button -> update(builder, current -> current.withHotbar(HotbarLayout.SUGGESTED))));
 		suggested.active = !hotbar.equals(HotbarLayout.SUGGESTED);
-		FlatButton keepAll = builder.widget(new FlatButton(0, 0, content.width(), MinekitTheme.ROW_HEIGHT,
-				Component.translatable("minekit.inventory.hotbar_keep_all"), button -> update(builder, current -> current.withHotbar(HotbarLayout.KEEP_ALL))));
-		keepAll.active = !hotbar.keepsAll();
+		FlatButton reset = builder.widget(new FlatButton(0, 0, content.width(), MinekitTheme.ROW_HEIGHT,
+				Component.translatable("minekit.inventory.hotbar_reset"), button -> update(builder, current -> current.withHotbar(HotbarLayout.KEEP_ALL))));
+		reset.setTooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("minekit.inventory.hotbar_reset_tooltip")));
+		reset.active = !hotbar.keepsAll();
 
 		content.heading(Component.translatable("minekit.inventory.order", Component.translatable(profile.translationKey())));
 		List<ItemCategory> order = settings.categoryOrder(profile);

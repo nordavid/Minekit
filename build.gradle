@@ -15,7 +15,7 @@ base {
 }
 
 // In-game tests (Fabric client gametest API) live in their own source set and test mod, `minekit_gametest`,
-// which is never packaged into the MINEKIT JAR. Run them with `gradlew runClientGameTest`; they open a game window.
+// which is never packaged into the Minekit JAR. Run them with `gradlew runClientGameTest`; they open a game window.
 // eula = true accepts the Minecraft EULA for the local dedicated test server the tests start in build/run
 // (approved by the project owner on 2026-11-06 for multiplayer testing).
 fabricApi {
@@ -86,7 +86,7 @@ test {
 
 // Copies the built mod JAR into a launcher instance's mods folder, e.g. a Modrinth App profile.
 // The path is machine-specific and is therefore never committed: set minekit.modsDir in
-// ~/.gradle/gradle.properties or pass -Pminekit.modsDir=<path>. Older MINEKIT JARs in that
+// ~/.gradle/gradle.properties or pass -Pminekit.modsDir=<path>. Older Minekit JARs in that
 // folder are removed so Fabric does not find the mod twice; no other file is touched.
 def modsDirProperty = providers.gradleProperty('minekit.modsDir')
 def modJar = tasks.named('jar').flatMap { it.archiveFile }
@@ -94,7 +94,7 @@ def modJarPrefix = base.archivesName
 
 tasks.register('installToModrinth') {
 	group = 'minekit'
-	description = 'Copies the MINEKIT JAR into the mods folder given by the minekit.modsDir property.'
+	description = 'Copies the Minekit JAR into the mods folder given by the minekit.modsDir property.'
 	inputs.file(modJar)
 
 	doLast { task ->

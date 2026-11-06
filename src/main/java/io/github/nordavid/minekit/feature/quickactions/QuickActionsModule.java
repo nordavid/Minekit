@@ -15,7 +15,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
 /**
- * D11 Quick Actions: a searchable popup, opened with a shortcut, that runs common MINEKIT actions. The actions
+ * D11 Quick Actions: a searchable popup, opened with a shortcut, that runs common Minekit actions. The actions
  * themselves live in the shared {@link QuickActionRegistry}, where every module can contribute. The player pins,
  * orders and hides actions ({@link QuickActionSettings}) in the popup and on the dashboard page.
  */

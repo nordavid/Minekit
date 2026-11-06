@@ -2,8 +2,8 @@
 	"schemaVersion": 1,
 	"id": "minekit_gametest",
 	"version": "1.0.0",
-	"name": "MINEKIT client gametests",
-	"description": "In-game tests for MINEKIT. Development only; never shipped.",
+	"name": "Minekit client gametests",
+	"description": "In-game tests for Minekit. Development only; never shipped.",
 	"license": "MIT",
 	"environment": "client",
 	"entrypoints": {

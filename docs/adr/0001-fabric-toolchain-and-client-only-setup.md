@@ -6,7 +6,7 @@
 
 ## Context
 
-MINEKIT targets Minecraft Java Edition 26.3 with Fabric and must run with no server-side component
+Minekit targets Minecraft Java Edition 26.3 with Fabric and must run with no server-side component
 (PROJECT_PLAN.md §3). The plan requires verified versions instead of versions copied from tutorials.
 
 Sources checked on 2026-11-06:
@@ -35,7 +35,7 @@ official template uses the non-remapping plugin ID `net.fabricmc.fabric-loom`.
    snapshot were published on the same day, so nothing is lost. When upgrading, re-check the version selector
    and move to the newest 1.19.x (or whatever line it recommends then).
 3. **One `main` source set, no `splitEnvironmentSourceSets()`.** The split protects common code from
-   accidentally using client-only classes. MINEKIT has no common or server code, so the split would only add
+   accidentally using client-only classes. Minekit has no common or server code, so the split would only add
    an empty source set. This matches the package layout in PROJECT_PLAN.md §4.1.
 4. **Client-only enforcement:** `"environment": "client"`, a single `client` entrypoint, no `main`/`server`
    entrypoint, no mixins, no networking. `ClientOnlyMetadataTest` checks the processed `fabric.mod.json`
@@ -53,5 +53,5 @@ official template uses the non-remapping plugin ID `net.fabricmc.fabric-loom`.
 - Building requires a JDK 25 for Gradle (`JAVA_HOME`). The README documents this.
 - Loom upgrades are deliberate: change `loom_version` after checking the version selector.
 - Loom still creates a `runServer` task. Running it starts a Fabric dedicated server on which Fabric Loader
-  skips MINEKIT because of its client environment. It is not part of the workflow and is not documented as one.
-- If MINEKIT ever needs code that also runs on a server, revisit decision 3. The plan currently rules that out.
+  skips Minekit because of its client environment. It is not part of the workflow and is not documented as one.
+- If Minekit ever needs code that also runs on a server, revisit decision 3. The plan currently rules that out.
