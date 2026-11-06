@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
  *   "schemaVersion": 1,
  *   "active": "tower.litematic",
  *   "show": true,
+ *   "wholeStructure": true,
  *   "placements": { "tower.litematic": { "sp-0123456789abcdef": { "x": 10, "y": 64, "z": -3, "rotation": 1, "mirrored": false } } },
  *   "ranges": { "tower.litematic": [0, 4] },
  *   "maxFileMegabytes": 32,
@@ -65,6 +66,8 @@ public final class BlueprintSettingsCodec implements JsonCodec<BlueprintSettings
 			active = null;
 		}
 		Boolean show = JsonFields.bool(object, "show");
+		// Added in 0.8.0 without a new schema version: older files simply do not have it.
+		Boolean whole = JsonFields.bool(object, "wholeStructure");
 
 		Map<String, Map<String, Placement>> placements = new TreeMap<>();
 		for (Map.Entry<String, JsonElement> file : JsonFields.section(object, "placements", warnings)) {
@@ -105,7 +108,7 @@ public final class BlueprintSettingsCodec implements JsonCodec<BlueprintSettings
 		}
 		Integer maxFile = JsonFields.integer(object, "maxFileMegabytes");
 		Long maxPositions = object.get("maxPositions") instanceof JsonPrimitive primitive && primitive.isNumber() ? primitive.getAsLong() : null;
-		BlueprintSettings value = new BlueprintSettings(active, show == null || show, placements, ranges,
+		BlueprintSettings value = new BlueprintSettings(active, show == null || show, whole == null || whole, placements, ranges,
 				maxFile == null ? BlueprintSettings.DEFAULT_MAX_FILE_MEGABYTES : maxFile,
 				maxPositions == null ? BlueprintSettings.DEFAULT_MAX_POSITIONS : maxPositions);
 		return new Decoded<>(value, schemaVersion, warnings);
@@ -136,6 +139,7 @@ public final class BlueprintSettingsCodec implements JsonCodec<BlueprintSettings
 			root.addProperty("active", settings.active());
 		}
 		root.addProperty("show", settings.show());
+		root.addProperty("wholeStructure", settings.whole());
 		JsonObject placements = new JsonObject();
 		settings.placements().forEach((file, byWorld) -> {
 			JsonObject worlds = new JsonObject();

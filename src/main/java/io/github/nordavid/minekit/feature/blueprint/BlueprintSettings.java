@@ -12,16 +12,18 @@ import org.jspecify.annotations.Nullable;
  *
  * @param active          file name of the blueprint shown, or {@code null}
  * @param show            whether the active blueprint is drawn in the world
+ * @param whole           whether the world shows the whole structure, or only the missing and wrong blocks around the
+ *                        player
  * @param placements      file name to world id to placement: a blueprint stands in each world where it was placed
  * @param ranges          file name to the layers being built (local y, inclusive); absent means all layers
  * @param maxFileMegabytes largest file Minekit imports
  * @param maxPositions    largest structure (width x height x length) Minekit imports
  */
-public record BlueprintSettings(@Nullable String active, boolean show, Map<String, Map<String, Placement>> placements,
+public record BlueprintSettings(@Nullable String active, boolean show, boolean whole, Map<String, Map<String, Placement>> placements,
 		Map<String, LayerRange> ranges, int maxFileMegabytes, long maxPositions) {
 	public static final int DEFAULT_MAX_FILE_MEGABYTES = 32;
 	public static final long DEFAULT_MAX_POSITIONS = 16_000_000L;
-	public static final BlueprintSettings DEFAULT = new BlueprintSettings(null, true, Map.of(), Map.of(), DEFAULT_MAX_FILE_MEGABYTES,
+	public static final BlueprintSettings DEFAULT = new BlueprintSettings(null, true, true, Map.of(), Map.of(), DEFAULT_MAX_FILE_MEGABYTES,
 			DEFAULT_MAX_POSITIONS);
 
 	/** Layers {@code from} to {@code to} (local y, inclusive) are the part being built. */
@@ -63,11 +65,15 @@ public record BlueprintSettings(@Nullable String active, boolean show, Map<Strin
 	}
 
 	public BlueprintSettings withActive(@Nullable String file) {
-		return new BlueprintSettings(file, show, placements, ranges, maxFileMegabytes, maxPositions);
+		return new BlueprintSettings(file, show, whole, placements, ranges, maxFileMegabytes, maxPositions);
 	}
 
 	public BlueprintSettings withShow(boolean value) {
-		return new BlueprintSettings(active, value, placements, ranges, maxFileMegabytes, maxPositions);
+		return new BlueprintSettings(active, value, whole, placements, ranges, maxFileMegabytes, maxPositions);
+	}
+
+	public BlueprintSettings withWhole(boolean value) {
+		return new BlueprintSettings(active, show, value, placements, ranges, maxFileMegabytes, maxPositions);
 	}
 
 	public BlueprintSettings withPlacement(String file, String world, @Nullable Placement placement) {
@@ -83,7 +89,7 @@ public record BlueprintSettings(@Nullable String active, boolean show, Map<Strin
 		} else {
 			next.put(file, byWorld);
 		}
-		return new BlueprintSettings(active, show, next, ranges, maxFileMegabytes, maxPositions);
+		return new BlueprintSettings(active, show, whole, next, ranges, maxFileMegabytes, maxPositions);
 	}
 
 	public BlueprintSettings withRange(String file, @Nullable LayerRange range) {
@@ -93,7 +99,7 @@ public record BlueprintSettings(@Nullable String active, boolean show, Map<Strin
 		} else {
 			next.put(file, range);
 		}
-		return new BlueprintSettings(active, show, placements, next, maxFileMegabytes, maxPositions);
+		return new BlueprintSettings(active, show, whole, placements, next, maxFileMegabytes, maxPositions);
 	}
 
 	/** Forgets everything about a file, for example after it was deleted. */
@@ -102,6 +108,6 @@ public record BlueprintSettings(@Nullable String active, boolean show, Map<Strin
 		nextPlacements.remove(file);
 		TreeMap<String, LayerRange> nextRanges = new TreeMap<>(ranges);
 		nextRanges.remove(file);
-		return new BlueprintSettings(Objects.equals(active, file) ? null : active, show, nextPlacements, nextRanges, maxFileMegabytes, maxPositions);
+		return new BlueprintSettings(Objects.equals(active, file) ? null : active, show, whole, nextPlacements, nextRanges, maxFileMegabytes, maxPositions);
 	}
 }

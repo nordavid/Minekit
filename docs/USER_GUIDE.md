@@ -174,8 +174,12 @@ places a block; you build.
    the window, or put it into the blueprint folder (*Open folder*). Minekit copies dropped files; the original stays
    untouched. Choose a blueprint on the left. If a file cannot be read, the screen says why.
 2. *Place in front of me*. Move it block by block (Shift: ten), turn it, mirror it, or move it to where you stand.
-3. Build. Around you, missing blocks glow teal and wrong ones red; the next block (the nearest open one in the lowest
-   unfinished layer) is amber, with its name.
+3. Build. The whole structure stands in the world: every block still to place is shown see-through in its own
+   color, wrong blocks are red, and blocks you placed correctly simply look like themselves. The next block (the
+   nearest open one in the lowest unfinished layer) is amber, with its name. Switch off *Whole structure in the world*
+   (or use Quick Actions → *Blueprint: whole structure or only around me*) to see only the missing (teal) and wrong
+   blocks within ten blocks of you. Limiting the layers being built (*Layers* tab) also cuts the structure open in the
+   world. A very large structure shows its nearest 12 000 faces.
 
 The screen has three tabs:
 

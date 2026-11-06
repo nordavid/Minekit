@@ -29,6 +29,8 @@ final class LayerTexture implements AutoCloseable {
 	private @Nullable DynamicTexture texture;
 	private int width;
 	private int height;
+	private int drawnX;
+	private int drawnY;
 
 	int width() {
 		return width;
@@ -105,7 +107,9 @@ final class LayerTexture implements AutoCloseable {
 		return 0xFF000000 | (red << 16) | (green << 8) | blue;
 	}
 
-	/** Draws the texture into a box, as large as fits while keeping square blocks; returns the block size used. */
+	/**
+	 * Draws the texture centered in a box, as large as fits while keeping square blocks; returns the block size used.
+	 */
 	double draw(GuiGraphicsExtractor graphics, int x, int y, int maxWidth, int maxHeight) {
 		if (texture == null) {
 			return 0;
@@ -113,8 +117,19 @@ final class LayerTexture implements AutoCloseable {
 		double scale = Math.min((double) maxWidth / width, (double) maxHeight / height);
 		int drawWidth = Math.max(1, (int) (width * scale));
 		int drawHeight = Math.max(1, (int) (height * scale));
-		graphics.blit(RenderPipelines.GUI_TEXTURED, ID, x, y, 0, 0, drawWidth, drawHeight, width, height, width, height);
+		drawnX = x + (maxWidth - drawWidth) / 2;
+		drawnY = y + (maxHeight - drawHeight) / 2;
+		graphics.blit(RenderPipelines.GUI_TEXTURED, ID, drawnX, drawnY, 0, 0, drawWidth, drawHeight, width, height, width, height);
 		return scale;
+	}
+
+	/** Left edge of the last draw, for finding the block under the mouse. */
+	int drawnX() {
+		return drawnX;
+	}
+
+	int drawnY() {
+		return drawnY;
 	}
 
 	@Override

@@ -114,3 +114,24 @@ notification was cut off. Findings and decisions:
    block models in the screen (much more code against fast-changing rendering APIs, and slow for 100 000 blocks) and
    a ghost of every block in the world (thousands of gizmo boxes per tick; the guide around the player stays as it
    is).
+
+## Addendum (2026-11-07, version 0.8.0)
+
+The 0.7.1 addendum rejected a ghost of every block in the world as too expensive. The owner asked for exactly that
+("the view in the world"), so it was measured instead of assumed:
+
+1. **The whole structure in the world** is the default world view; *around me* (the 0.7 guide) stays as an option
+   (`wholeStructure` in `blueprints.json`, a toggle on the Overview tab and a Quick Action). Every block still to place
+   is drawn as see-through faces in its map color, shaded per side like Minecraft's block lighting (top 1.0, north and
+   south 0.8, east and west 0.6, bottom 0.5); wrong blocks get red faces just outside the real block; correct blocks
+   are not drawn, so the built part looks like itself. Positions not checked yet are fainter.
+2. **Only the outside is drawn.** `GhostShell` (pure, unit tested) lists the faces of the layers being built that do
+   not touch a solid block of those layers; see-through blocks (no map color) hide nothing. It runs on a background
+   thread when the blueprint, placement or layer range changes. The layer range therefore also cuts the structure
+   open in the world.
+3. **Gizmos, with a cap.** Faces are emitted as gizmo rectangles in the client tick, depth-tested, so real blocks hide
+   them. At most 12 000 faces are drawn, the nearest to the player; the selection is renewed in the background when
+   the player has moved six blocks. In the gametest a 40 x 20 x 40 stone and glass checkerboard (96 000 visible faces)
+   drew 11 994 faces in 0.6 ms per tick. Rendering a vertex buffer through Fabric's level render events would scale
+   further, but needs the fast-changing 26.x render APIs; gizmos were enough for the measured sizes.
+4. **The plan is centered** in its box like the 3D view.

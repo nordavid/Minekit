@@ -227,6 +227,13 @@ public final class BlueprintScreen extends Screen {
 						module.setShow(requested);
 						return module.settings().current().show();
 					}));
+			ToggleButton whole = new ToggleButton(0, 0, pane.width(), ROW, Component.translatable("minekit.blueprint.show_whole"),
+					module.settings().current().whole(), requested -> {
+						module.setWhole(requested);
+						return module.settings().current().whole();
+					});
+			whole.setTooltip(Tooltip.create(Component.translatable("minekit.blueprint.show_whole_tooltip")));
+			addWidget(whole);
 		}
 
 		pane.heading(Component.translatable("minekit.blueprint.progress"));
@@ -418,9 +425,9 @@ public final class BlueprintScreen extends Screen {
 		if (shown == null || tab != Tab.LAYERS || whole || mapScale <= 0) {
 			return null;
 		}
-		int px = (int) ((mouseX - mapX) / mapScale);
-		int pz = (int) ((mouseY - mapY) / mapScale);
-		if (mouseX < mapX || mouseY < mapY || px >= texture.width() || pz >= texture.height()) {
+		int px = (int) Math.floor((mouseX - texture.drawnX()) / mapScale);
+		int pz = (int) Math.floor((mouseY - texture.drawnY()) / mapScale);
+		if (px < 0 || pz < 0 || px >= texture.width() || pz >= texture.height()) {
 			return null;
 		}
 		Optional<Placement> placement = module.placement();
