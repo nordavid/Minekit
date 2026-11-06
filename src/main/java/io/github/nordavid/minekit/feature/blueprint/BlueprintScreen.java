@@ -38,8 +38,9 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * The blueprint screen: files on the left (drop files onto the window to import them); on the right the active
- * blueprint with three tabs: overview (placement, progress, next block, measuring), layers (one layer from above,
- * colored by build status) and materials (what is still needed, what the player carries, what storage holds).
+ * blueprint with three tabs: overview (placement, progress, next block, measuring), layers (one layer from above as a
+ * plan, or the whole structure in 3D cut at a layer, both colored by build status) and materials (what is still
+ * needed, what the player carries, what storage holds).
  */
 public final class BlueprintScreen extends Screen {
 	private enum Tab {
@@ -60,11 +61,19 @@ public final class BlueprintScreen extends Screen {
 	private static final int LINE = MinekitTheme.LINE_HEIGHT;
 	private static Tab tab = Tab.OVERVIEW;
 	private static int layer;
+	/** Whether the layers tab shows the whole structure in 3D instead of the plan of one layer. */
+	private static boolean whole = true;
+	/** The 3D view's camera, in quarter turns around the structure. */
+	private static int turn;
+	/** The highest layer the 3D view shows; reset to the top for every new blueprint. */
+	private static int cut;
+	private static @Nullable String cutFile;
 
 	private final BlueprintModule module;
 	private final ContentPane list;
 	private final ContentPane pane;
 	private final LayerTexture texture = new LayerTexture();
+	private final StructureTexture structure = new StructureTexture();
 	private @Nullable ResolvedBlueprint shown;
 	private boolean shownPlaced;
 	private boolean deleteArmed;
@@ -83,6 +92,8 @@ public final class BlueprintScreen extends Screen {
 	private int mapWidth;
 	private int mapHeight;
 	private double mapScale;
+	private int labelCenter;
+	private int labelWidth;
 
 	public BlueprintScreen(BlueprintModule module) {
 		super(Component.translatable("minekit.blueprint.title"));
@@ -94,6 +105,11 @@ public final class BlueprintScreen extends Screen {
 	/** The blueprint shown on the right, for tests. */
 	public Optional<ResolvedBlueprint> shown() {
 		return Optional.ofNullable(shown);
+	}
+
+	/** Whether the 3D view has a picture to show, for tests. */
+	public boolean isStructureDrawn() {
+		return structure.isReady();
 	}
 
 	@Override
@@ -128,6 +144,11 @@ public final class BlueprintScreen extends Screen {
 					}));
 		}
 		layer = Math.clamp(layer, 0, shown.blueprint().sizeY() - 1);
+		if (!shown.file().equals(cutFile)) {
+			cutFile = shown.file();
+			cut = shown.blueprint().sizeY() - 1;
+		}
+		cut = Math.clamp(cut, 0, shown.blueprint().sizeY() - 1);
 		pane.reset(rightX, contentTop, rightWidth, panelY + panelHeight - 8 - contentTop);
 		switch (tab) {
 			case OVERVIEW -> buildOverview(shown);
@@ -307,31 +328,84 @@ public final class BlueprintScreen extends Screen {
 	private void buildLayers(ResolvedBlueprint resolved) {
 		Blueprint blueprint = resolved.blueprint();
 		int y = contentTop;
+		Component planLabel = Component.translatable("minekit.blueprint.view.plan");
+		Component wholeLabel = Component.translatable("minekit.blueprint.view.whole");
+		int planWidth = font.width(planLabel) + 14;
+		int wholeWidth = font.width(wholeLabel) + 14;
+		int controlsX = rightX + rightWidth - (planWidth + 2 + wholeWidth);
+		addRenderableWidget(new NavButton(controlsX, y, planWidth, ROW, planLabel, () -> !whole, () -> {
+			whole = false;
+			rebuildWidgets();
+		})).setTooltip(Tooltip.create(Component.translatable("minekit.blueprint.view.plan_tooltip")));
+		addRenderableWidget(new NavButton(controlsX + planWidth + 2, y, wholeWidth, ROW, wholeLabel, () -> whole, () -> {
+			whole = true;
+			rebuildWidgets();
+		})).setTooltip(Tooltip.create(Component.translatable("minekit.blueprint.view.whole_tooltip")));
+		int arrowsRight = controlsX - 6;
 		addRenderableWidget(new FlatButton(rightX, y, 22, ROW, Component.literal("▼"), button -> stepLayer(-1)))
-				.setTooltip(Tooltip.create(Component.translatable("minekit.blueprint.layer_down")));
-		addRenderableWidget(new FlatButton(rightX + rightWidth - 22, y, 22, ROW, Component.literal("▲"), button -> stepLayer(1)))
-				.setTooltip(Tooltip.create(Component.translatable("minekit.blueprint.layer_up")));
+				.setTooltip(Tooltip.create(Component.translatable(whole ? "minekit.blueprint.cut_down" : "minekit.blueprint.layer_down")));
+		addRenderableWidget(new FlatButton(arrowsRight - 22, y, 22, ROW, Component.literal("▲"), button -> stepLayer(1)))
+				.setTooltip(Tooltip.create(Component.translatable(whole ? "minekit.blueprint.cut_up" : "minekit.blueprint.layer_up")));
+		labelCenter = (rightX + arrowsRight) / 2;
+		labelWidth = arrowsRight - rightX - 2 * 22 - 8;
+
 		BlueprintSettings.LayerRange range = module.settings().current().range(resolved.file(), blueprint.sizeY());
 		int third = (rightWidth - 8) / 3;
 		int buttonsY = y + ROW + 4;
 		addRenderableWidget(new FlatButton(rightX, buttonsY, third, ROW, Component.translatable("minekit.blueprint.range_from"),
-				button -> setRange(new BlueprintSettings.LayerRange(layer, Math.max(layer, range.to())))));
+				button -> setRange(new BlueprintSettings.LayerRange(current(), Math.max(current(), range.to())))))
+				.setTooltip(Tooltip.create(Component.translatable("minekit.blueprint.range_from_tooltip")));
 		addRenderableWidget(new FlatButton(rightX + third + 4, buttonsY, third, ROW, Component.translatable("minekit.blueprint.range_to"),
-				button -> setRange(new BlueprintSettings.LayerRange(Math.min(layer, range.from()), layer))));
+				button -> setRange(new BlueprintSettings.LayerRange(Math.min(current(), range.from()), current()))))
+				.setTooltip(Tooltip.create(Component.translatable("minekit.blueprint.range_to_tooltip")));
 		addRenderableWidget(new FlatButton(rightX + 2 * (third + 4), buttonsY, rightWidth - 2 * (third + 4), ROW,
-				Component.translatable("minekit.blueprint.range_all"), button -> setRange(null)));
+				Component.translatable("minekit.blueprint.range_all"), button -> setRange(null)))
+				.setTooltip(Tooltip.create(Component.translatable("minekit.blueprint.range_all_tooltip")));
 		mapX = rightX;
 		mapY = buttonsY + ROW + 6;
 		mapWidth = rightWidth;
 		mapHeight = panelY + panelHeight - 8 - 2 * LINE - mapY;
-		texture.paint(resolved, layer, module.placement().orElse(null), module.progress().orElse(null));
+		if (whole) {
+			// In the corner of the view: the picture of an isometric box leaves its corners empty.
+			Component turnLabel = Component.translatable("minekit.blueprint.view.turn_button");
+			int turnWidth = font.width(turnLabel) + 12;
+			addRenderableWidget(new FlatButton(mapX + mapWidth - turnWidth - 3, mapY + 3, turnWidth, ROW, turnLabel, button -> {
+				turn = (turn + 1) % 4;
+				rebuildWidgets();
+			})).setTooltip(Tooltip.create(Component.translatable("minekit.blueprint.view.turn")));
+			requestStructure(false);
+		} else {
+			texture.paint(resolved, layer, module.placement().orElse(null), module.progress().orElse(null));
+		}
+	}
+
+	/** The layer the arrows and the range buttons work on: the plan's layer, or the 3D view's cut. */
+	private int current() {
+		return whole ? cut : layer;
 	}
 
 	private void stepLayer(int delta) {
 		if (shown != null) {
-			layer = Math.clamp(layer + delta, 0, shown.blueprint().sizeY() - 1);
+			int top = shown.blueprint().sizeY() - 1;
+			if (whole) {
+				cut = Math.clamp(cut + delta, 0, top);
+			} else {
+				layer = Math.clamp(layer + delta, 0, top);
+			}
 			rebuildWidgets();
 		}
+	}
+
+	/** Asks for the 3D picture at the size the map box has in real pixels, so it is as sharp as the screen allows. */
+	private void requestStructure(boolean refresh) {
+		if (shown == null) {
+			return;
+		}
+		ResolvedBlueprint resolved = shown;
+		double scale = (double) minecraft.getWindow().getWidth() / Math.max(1, width);
+		Optional<BlueprintProgress> progress = module.progress().filter(p -> p.blueprint() == resolved.blueprint());
+		structure.request(resolved, cut + 1, module.placement().orElse(null), progress.orElse(null), turn, (int) (mapWidth * scale),
+				(int) (mapHeight * scale), refresh);
 	}
 
 	private void setRange(BlueprintSettings.@Nullable LayerRange range) {
@@ -341,7 +415,7 @@ public final class BlueprintScreen extends Screen {
 
 	/** Local position (x, z) of the map pixel under the mouse, or {@code null}. */
 	private int @Nullable [] mapCell(double mouseX, double mouseY) {
-		if (shown == null || tab != Tab.LAYERS || mapScale <= 0) {
+		if (shown == null || tab != Tab.LAYERS || whole || mapScale <= 0) {
 			return null;
 		}
 		int px = (int) ((mouseX - mapX) / mapScale);
@@ -461,7 +535,12 @@ public final class BlueprintScreen extends Screen {
 			return;
 		}
 		if (shown != null && ticks % 20 == 0) {
-			if (tab == Tab.LAYERS) {
+			if (tab == Tab.LAYERS && whole) {
+				if (placed) {
+					// Only the build status changes; a blueprint that is not placed has none.
+					requestStructure(true);
+				}
+			} else if (tab == Tab.LAYERS) {
 				texture.paint(shown, layer, module.placement().orElse(null), module.progress().orElse(null));
 			} else {
 				rebuildWidgets();
@@ -481,6 +560,7 @@ public final class BlueprintScreen extends Screen {
 	@Override
 	public void removed() {
 		texture.close();
+		structure.close();
 		super.removed();
 	}
 
@@ -540,9 +620,22 @@ public final class BlueprintScreen extends Screen {
 		}
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 		if (tab == Tab.LAYERS && shown != null) {
-			int[] cell = mapCell(mouseX, mouseY);
-			if (cell != null) {
-				graphics.setComponentTooltipForNextFrame(font, cellTooltip(cell[0], cell[1]), mouseX, mouseY);
+			List<Component> tooltip = null;
+			if (whole) {
+				int cell = structure.cellAt(mouseX, mouseY);
+				if (cell >= 0) {
+					Blueprint blueprint = shown.blueprint();
+					int area = blueprint.sizeX() * blueprint.sizeZ();
+					tooltip = cellTooltip(cell % area % blueprint.sizeX(), cell / area, cell % area / blueprint.sizeX());
+				}
+			} else {
+				int[] cell = mapCell(mouseX, mouseY);
+				if (cell != null) {
+					tooltip = cellTooltip(cell[0], layer, cell[1]);
+				}
+			}
+			if (tooltip != null) {
+				graphics.setComponentTooltipForNextFrame(font, tooltip, mouseX, mouseY);
 			}
 		}
 	}
@@ -550,20 +643,37 @@ public final class BlueprintScreen extends Screen {
 	private void extractLayer(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
 		Blueprint blueprint = Objects.requireNonNull(shown).blueprint();
 		Optional<Placement> placement = module.placement();
-		Component label = placement.isPresent()
-				? Component.translatable("minekit.blueprint.layer_world", layer + 1, blueprint.sizeY(), placement.get().worldY(layer))
-				: Component.translatable("minekit.blueprint.layer", layer + 1, blueprint.sizeY());
-		UiText.drawCentered(graphics, font, label, rightX + rightWidth / 2, contentTop + 5, rightWidth - 52, MinekitTheme.TEXT);
+		int shownLayer = current();
+		Component label = Component.translatable(whole ? "minekit.blueprint.layers_up_to" : "minekit.blueprint.layer", shownLayer + 1, blueprint.sizeY());
+		if (placement.isPresent()) {
+			// The height in the world only if it fits; the tooltip of every block has it too.
+			Component withHeight = Component.translatable(whole ? "minekit.blueprint.layers_up_to_world" : "minekit.blueprint.layer_world",
+					shownLayer + 1, blueprint.sizeY(), placement.get().worldY(shownLayer));
+			if (font.width(withHeight) <= labelWidth) {
+				label = withHeight;
+			}
+		}
+		UiText.drawCentered(graphics, font, label, labelCenter, contentTop + 5, labelWidth, MinekitTheme.TEXT);
 		graphics.fill(mapX, mapY, mapX + mapWidth, mapY + mapHeight, MinekitTheme.SURFACE_DISABLED);
-		mapScale = texture.draw(graphics, mapX, mapY, mapWidth, mapHeight);
+		if (whole) {
+			structure.draw(graphics, mapX, mapY, mapWidth, mapHeight);
+			String notice = structure.isTooLarge() ? "minekit.blueprint.view.too_large" : structure.isPainting() ? "minekit.blueprint.view.painting" : null;
+			if (notice != null) {
+				UiText.drawCentered(graphics, font, Component.translatable(notice), mapX + mapWidth / 2, mapY + mapHeight / 2 - 4, mapWidth - 16,
+						MinekitTheme.TEXT_MUTED);
+			}
+		} else {
+			mapScale = texture.draw(graphics, mapX, mapY, mapWidth, mapHeight);
+		}
 		int legendY = mapY + mapHeight + 3;
 		int x = rightX;
 		x = legend(graphics, x, legendY, LayerTexture.CORRECT, "minekit.blueprint.status.correct");
 		x = legend(graphics, x, legendY, LayerTexture.mix(0xFF8899AA, LayerTexture.EMPTY, 0.45), "minekit.blueprint.status.missing");
 		x = legend(graphics, x, legendY, LayerTexture.WRONG, "minekit.blueprint.status.wrong");
 		legend(graphics, x, legendY, LayerTexture.mix(0xFF8899AA, LayerTexture.EMPTY, 0.75), "minekit.blueprint.status.unchecked");
-		UiText.draw(graphics, font, Component.translatable(placement.isPresent() ? "minekit.blueprint.north_up" : "minekit.blueprint.not_placed_map"),
-				rightX, legendY + LINE, rightWidth, MinekitTheme.TEXT_DISABLED);
+		String hint = !placement.isPresent() ? "minekit.blueprint.not_placed_map"
+				: whole ? "minekit.blueprint.view.from." + turn : "minekit.blueprint.north_up";
+		UiText.draw(graphics, font, Component.translatable(hint), rightX, legendY + LINE, rightWidth, MinekitTheme.TEXT_DISABLED);
 	}
 
 	private int legend(GuiGraphicsExtractor graphics, int x, int y, int color, String key) {
@@ -573,10 +683,10 @@ public final class BlueprintScreen extends Screen {
 		return x + 10 + font.width(text) + 10;
 	}
 
-	private List<Component> cellTooltip(int localX, int localZ) {
+	private List<Component> cellTooltip(int localX, int localY, int localZ) {
 		ResolvedBlueprint resolved = Objects.requireNonNull(shown);
 		Blueprint blueprint = resolved.blueprint();
-		int palette = blueprint.paletteIndex(localX, layer, localZ);
+		int palette = blueprint.paletteIndex(localX, localY, localZ);
 		BlockSpec spec = blueprint.palette().get(palette);
 		List<Component> lines = new ArrayList<>();
 		BlockState state = resolved.state(palette);
@@ -585,10 +695,10 @@ public final class BlueprintScreen extends Screen {
 		Optional<Placement> placement = module.placement();
 		if (placement.isPresent()) {
 			Placement p = placement.get();
-			lines.add(Component.literal(p.worldX(blueprint, localX, localZ) + " " + p.worldY(layer) + " " + p.worldZ(blueprint, localX, localZ))
+			lines.add(Component.literal(p.worldX(blueprint, localX, localZ) + " " + p.worldY(localY) + " " + p.worldZ(blueprint, localX, localZ))
 					.withStyle(ChatFormatting.GRAY));
 			Optional<BlueprintProgress> progress = module.progress();
-			int index = blueprint.index(localX, layer, localZ);
+			int index = blueprint.index(localX, localY, localZ);
 			if (progress.isPresent() && progress.get().isTracked(index)) {
 				lines.add(Component.translatable("minekit.blueprint.status." + progress.get().status(index).name().toLowerCase(java.util.Locale.ROOT))
 						.withStyle(ChatFormatting.DARK_GRAY));
