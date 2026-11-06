@@ -34,6 +34,9 @@ import io.github.nordavid.minekit.feature.inventory.InventorySettingsCodec;
 import io.github.nordavid.minekit.feature.inventory.SmartInventoryModule;
 import io.github.nordavid.minekit.core.action.QuickAction;
 import io.github.nordavid.minekit.core.action.QuickActionRegistry;
+import io.github.nordavid.minekit.feature.blueprint.BlueprintModule;
+import io.github.nordavid.minekit.feature.blueprint.BlueprintSettings;
+import io.github.nordavid.minekit.feature.blueprint.BlueprintSettingsCodec;
 import io.github.nordavid.minekit.feature.loadout.LoadoutModule;
 import io.github.nordavid.minekit.feature.loadout.Loadouts;
 import io.github.nordavid.minekit.feature.loadout.LoadoutsCodec;
@@ -94,6 +97,9 @@ public final class MinekitClient implements ClientModInitializer {
 		JsonFileStore<Loadouts> loadouts =
 				new JsonFileStore<>(dataDirectory.resolve("loadouts.json"), Clock.systemUTC(), LoadoutsCodec.INSTANCE);
 		LoadResult loadoutsResult = loadouts.load();
+		JsonFileStore<BlueprintSettings> blueprintSettings =
+				new JsonFileStore<>(dataDirectory.resolve("blueprints.json"), Clock.systemUTC(), BlueprintSettingsCodec.INSTANCE);
+		LoadResult blueprintsResult = blueprintSettings.load();
 
 		NotificationService notifications = new NotificationService();
 		HudManager hud = new HudManager(config);
@@ -137,6 +143,8 @@ public final class MinekitClient implements ClientModInitializer {
 		modules.register(new SmartDepositModule(depositSettings, () -> inventorySettings.current().favorites(), containers, panels, keybinds,
 				notifications, executor, pages));
 		modules.register(new LoadoutModule(loadouts, containers, panels, keybinds, notifications, executor, actions, pages));
+		modules.register(new BlueprintModule(dataDirectory.resolve("blueprints"), blueprintSettings, keybinds, notifications, actions, pages, goals,
+				storage));
 		// Last, so its dashboard page sits next to Settings; it adds no actions of its own.
 		modules.register(new QuickActionsModule(actions, quickActionSettings, keybinds, notifications, pages));
 		modules.initializeAll();
@@ -157,6 +165,7 @@ public final class MinekitClient implements ClientModInitializer {
 		reportConfigProblems(depositResult, notifications);
 		reportConfigProblems(quickActionsResult, notifications);
 		reportConfigProblems(loadoutsResult, notifications);
+		reportConfigProblems(blueprintsResult, notifications);
 		modules.modules().stream()
 				.filter(module -> module.state() == ModuleState.FAILED)
 				.forEach(module -> notifications.error(Component.translatable("minekit.notification.module_failed",
