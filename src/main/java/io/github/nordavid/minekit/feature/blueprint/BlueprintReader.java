@@ -8,7 +8,9 @@ import java.util.Optional;
 import java.util.TreeMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
+import net.minecraft.util.datafix.fixes.BlockStateData;
 
 /**
  * Turns the NBT of a blueprint file into a {@link Blueprint}. Supports Litematica ({@code .litematic}) and Sponge
@@ -21,16 +23,20 @@ public final class BlueprintReader {
 	private BlueprintReader() {
 	}
 
-	/** Reads whichever supported format the NBT is. */
+	/**
+	 * Reads whichever supported format the NBT is. Sponge schematics v3 nest their content in a compound named
+	 * {@code Schematic}; some tools do the same for v2 and for MCEdit schematics, so the content is looked for there too.
+	 */
 	public static Blueprint read(CompoundTag root, String fallbackName, BlueprintLimits limits) throws BlueprintException {
 		if (root.contains("Regions")) {
 			return readLitematic(root, fallbackName, limits);
 		}
-		if (root.contains("Schematic") || root.contains("BlockData") || (root.contains("Blocks") && root.contains("Version"))) {
-			return readSponge(root, fallbackName, limits);
+		CompoundTag body = root.getCompound("Schematic").filter(nested -> !root.contains("Version") && !root.contains("Width")).orElse(root);
+		if (body.getByteArray("Blocks").isPresent() || body.contains("Materials")) {
+			return readMcEdit(body, fallbackName, limits);
 		}
-		if (root.contains("Materials")) {
-			throw new BlueprintException("legacy_schematic");
+		if (body.contains("Version") || body.contains("BlockData") || body.contains("Palette") || body.getCompound("Blocks").isPresent()) {
+			return readSponge(body, fallbackName, limits);
 		}
 		throw new BlueprintException("unknown_format");
 	}
@@ -180,9 +186,7 @@ public final class BlueprintReader {
 
 	// ------------------------------------------------------------------------------------------------------------- Sponge
 
-	static Blueprint readSponge(CompoundTag root, String fallbackName, BlueprintLimits limits) throws BlueprintException {
-		// Version 3 nests everything in a compound named "Schematic"; versions 1 and 2 use the root itself.
-		CompoundTag body = !root.contains("Version") && root.getCompound("Schematic").isPresent() ? root.getCompound("Schematic").get() : root;
+	static Blueprint readSponge(CompoundTag body, String fallbackName, BlueprintLimits limits) throws BlueprintException {
 		int version = body.getIntOr("Version", -1);
 		if (version < 1 || version > 3) {
 			throw new BlueprintException("unsupported_version", "Sponge " + version);
@@ -264,6 +268,61 @@ public final class BlueprintReader {
 		};
 		return new Blueprint(metadata.getStringOr("Name", fallbackName), metadata.getStringOr("Author", ""), format,
 				body.getIntOr("DataVersion", 0), width, height, length, palette.entries(), cells);
+	}
+
+	// ------------------------------------------------------------------------------------------------------------- MCEdit
+
+	/** Data version the 1.13 block states of {@link BlockStateData} are in (after the flattening). */
+	static final int FLATTENED_DATA_VERSION = 1452;
+
+	/**
+	 * MCEdit {@code .schematic} files (Minecraft 1.12 and older): numeric block ids and data values, translated to block
+	 * states with the table Minecraft itself uses to upgrade 1.12 worlds. {@code AddBlocks} adds four high bits to the
+	 * ids for blocks above 255 (modded blocks), which stay unknown.
+	 */
+	static Blueprint readMcEdit(CompoundTag body, String fallbackName, BlueprintLimits limits) throws BlueprintException {
+		String materials = body.getStringOr("Materials", "Alpha");
+		if (!materials.equals("Alpha")) {
+			throw new BlueprintException("legacy_schematic", materials);
+		}
+		int width = unsignedShort(body, "Width");
+		int height = unsignedShort(body, "Height");
+		int length = unsignedShort(body, "Length");
+		if (width == 0 || height == 0 || length == 0) {
+			throw new BlueprintException("empty");
+		}
+		long volume = (long) width * height * length;
+		checkVolume(volume, limits);
+		byte[] blocks = body.getByteArray("Blocks").orElseThrow(() -> new BlueprintException("missing_field", "Blocks"));
+		byte[] data = body.getByteArray("Data").orElse(new byte[blocks.length]);
+		byte[] add = body.getByteArray("AddBlocks").orElse(new byte[0]);
+		if (blocks.length != volume || data.length != volume) {
+			throw new BlueprintException("data_too_short", "Blocks");
+		}
+		PaletteBuilder palette = new PaletteBuilder(limits);
+		Map<Integer, Short> known = new HashMap<>();
+		short[] cells = new short[(int) volume];
+		for (int index = 0; index < volume; index++) {
+			int id = blocks[index] & 0xFF;
+			int high = index >> 1 < add.length ? ((index & 1) == 0 ? add[index >> 1] & 0x0F : (add[index >> 1] >> 4) & 0x0F) : 0;
+			int legacy = ((high << 8) | id) << 4 | (data[index] & 0x0F);
+			Short global = known.get(legacy);
+			if (global == null) {
+				global = palette.indexOf(legacyBlock(legacy));
+				known.put(legacy, global);
+			}
+			cells[index] = global;
+		}
+		return new Blueprint(fallbackName, "", Blueprint.Format.MCEDIT, FLATTENED_DATA_VERSION, width, height, length, palette.entries(), cells);
+	}
+
+	/** The 1.13 block state of a 1.12 block id and data value ({@code id << 4 | data}). */
+	private static BlockSpec legacyBlock(int legacy) throws BlueprintException {
+		if (legacy >> 4 > 255) {
+			return BlockSpec.parse("minecraft:legacy_" + (legacy >> 4) + "_" + (legacy & 15));
+		}
+		Tag tag = BlockStateData.getTag(legacy).convert(NbtOps.INSTANCE).getValue();
+		return tag instanceof CompoundTag compound ? blockFromTag(compound) : BlockSpec.AIR;
 	}
 
 	private static int unsignedShort(CompoundTag body, String key) throws BlueprintException {

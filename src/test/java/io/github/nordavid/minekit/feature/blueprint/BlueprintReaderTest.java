@@ -242,6 +242,54 @@ class BlueprintReaderTest {
 	}
 
 	@Test
+	void plainUncompressedNbtIsReadToo() throws Exception {
+		// Some sites serve .litematic files without gzip compression.
+		CompoundTag root = litematic(Map.of("r", region(new int[] {0, 0, 0}, new int[] {1, 1, 1}, List.of(BlockSpec.AIR, STONE), new int[] {1})));
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		NbtIo.write(root, new java.io.DataOutputStream(bytes));
+		Blueprint blueprint = BlueprintFiles.read(new ByteArrayInputStream(bytes.toByteArray()), "plain", BlueprintLimits.DEFAULT);
+		assertEquals(STONE, blueprint.at(0, 0, 0));
+	}
+
+	@Test
+	void spongeVersionTwoNestedInASchematicCompoundIsRead() throws Exception {
+		CompoundTag nested = new CompoundTag();
+		nested.put("Schematic", sponge(2, 1, 1, 1, List.of(BlockSpec.AIR, STONE), new int[] {1}));
+		assertEquals(STONE, roundTrip(nested, BlueprintLimits.DEFAULT).at(0, 0, 0));
+	}
+
+	@Test
+	void mcEditSchematicsAreTranslatedWithMinecraftsOwnTable() throws Exception {
+		net.minecraft.SharedConstants.tryDetectVersion();
+		// 3 x 1 x 2: stone, granite (1:1), red wool (35:14); grass block (2), tall grass (31:1), a modded block 300:0.
+		CompoundTag body = new CompoundTag();
+		body.putShort("Width", (short) 3);
+		body.putShort("Height", (short) 1);
+		body.putShort("Length", (short) 2);
+		body.putString("Materials", "Alpha");
+		body.putByteArray("Blocks", new byte[] {1, 1, 35, 2, 31, (byte) (300 & 0xFF)});
+		body.putByteArray("Data", new byte[] {0, 1, 14, 0, 1, 0});
+		// AddBlocks: four high bits per block, the low nibble for even indexes; index 5 (odd) uses the high nibble.
+		body.putByteArray("AddBlocks", new byte[] {0, 0, (byte) (1 << 4)});
+		CompoundTag nested = new CompoundTag();
+		nested.put("Schematic", body);
+
+		Blueprint blueprint = roundTrip(nested, BlueprintLimits.DEFAULT);
+		assertEquals(Blueprint.Format.MCEDIT, blueprint.format());
+		assertEquals(BlueprintReader.FLATTENED_DATA_VERSION, blueprint.dataVersion());
+		assertEquals("minecraft:stone", blueprint.at(0, 0, 0).id());
+		assertEquals("minecraft:granite", blueprint.at(1, 0, 0).id());
+		assertEquals("minecraft:red_wool", blueprint.at(2, 0, 0).id());
+		assertEquals("minecraft:grass_block", blueprint.at(0, 0, 1).id());
+		assertEquals("minecraft:grass", blueprint.at(1, 0, 1).id(), "the 1.13 name; the data fixer renames it later");
+		assertEquals("minecraft:legacy_300_0", blueprint.at(2, 0, 1).id(), "modded ids stay unknown");
+
+		CompoundTag pocket = body.copy();
+		pocket.putString("Materials", "Pocket");
+		assertEquals("legacy_schematic", assertThrows(BlueprintException.class, () -> roundTrip(pocket, BlueprintLimits.DEFAULT)).reason());
+	}
+
+	@Test
 	void malformedFilesFailWithAReason() {
 		BlueprintLimits limits = BlueprintLimits.DEFAULT;
 		assertReason("invalid_palette_index", litematic(Map.of("r",
@@ -268,7 +316,7 @@ class BlueprintReaderTest {
 
 		CompoundTag legacy = new CompoundTag();
 		legacy.putString("Materials", "Alpha");
-		assertReason("legacy_schematic", legacy, limits);
+		assertReason("missing_field", legacy, limits);
 		assertReason("unknown_format", new CompoundTag(), limits);
 
 		CompoundTag future = sponge(2, 1, 1, 1, List.of(BlockSpec.AIR), new int[] {0});
@@ -281,9 +329,12 @@ class BlueprintReaderTest {
 
 	@Test
 	void notCompressedAndTooLargeFilesAreRejected(@TempDir Path directory) throws IOException {
-		BlueprintException notCompressed = assertThrows(BlueprintException.class,
+		BlueprintException notNbt = assertThrows(BlueprintException.class,
 				() -> BlueprintFiles.read(new ByteArrayInputStream(new byte[] {1, 2, 3, 4}), "x", BlueprintLimits.DEFAULT));
-		assertEquals("not_compressed", notCompressed.reason());
+		assertEquals("not_nbt", notNbt.reason());
+		BlueprintException damaged = assertThrows(BlueprintException.class,
+				() -> BlueprintFiles.read(new ByteArrayInputStream(new byte[] {0x1f, (byte) 0x8b, 99, 0, 0, 0}), "x", BlueprintLimits.DEFAULT));
+		assertEquals("damaged", damaged.reason(), "gzip header, then garbage");
 
 		Path big = directory.resolve("big.schem");
 		Files.write(big, new byte[4096]);

@@ -12,6 +12,7 @@ public final class Blueprint {
 	/** The file formats Minekit reads. */
 	public enum Format {
 		LITEMATIC("Litematica"),
+		MCEDIT("MCEdit schematic"),
 		SPONGE_V1("Sponge schematic v1"),
 		SPONGE_V2("Sponge schematic v2"),
 		SPONGE_V3("Sponge schematic v3");

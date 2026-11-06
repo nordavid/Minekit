@@ -1,5 +1,7 @@
 package io.github.nordavid.minekit.feature.blueprint;
 
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -10,15 +12,19 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtAccounterException;
 import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.Tag;
 
 /**
- * Reads blueprint files from disk. The file is untrusted: its size is checked before reading, the decompressed NBT is
- * read with Minecraft's accounter (a memory quota and a nesting limit, against zip bombs and deeply nested data), and
- * every failure becomes a {@link BlueprintException} with a message for the player, never a crash.
+ * Reads blueprint files from disk. The file is untrusted: its size is checked before reading, the NBT is read with
+ * Minecraft's accounter (a memory quota and a nesting limit, against zip bombs and deeply nested data), and every
+ * failure becomes a {@link BlueprintException} with a message for the player, never a crash.
+ *
+ * <p>Files are usually gzip-compressed, but some sites serve them as plain NBT; both are read.
  */
 public final class BlueprintFiles {
 	public static final String LITEMATIC = ".litematic";
 	public static final String SCHEM = ".schem";
+	public static final String SCHEMATIC = ".schematic";
 
 	private BlueprintFiles() {
 	}
@@ -26,7 +32,7 @@ public final class BlueprintFiles {
 	/** Whether Minekit reads files with this name. */
 	public static boolean isSupported(Path file) {
 		String name = file.getFileName().toString().toLowerCase(Locale.ROOT);
-		return name.endsWith(LITEMATIC) || name.endsWith(SCHEM);
+		return name.endsWith(LITEMATIC) || name.endsWith(SCHEM) || name.endsWith(SCHEMATIC);
 	}
 
 	/** The file name without its extension, the blueprint's name if the file has none. */
@@ -56,15 +62,27 @@ public final class BlueprintFiles {
 		}
 	}
 
-	/** Reads gzip-compressed NBT from a stream; the caller has checked the size. */
+	/** Reads gzip-compressed or plain NBT from a stream; the caller has checked the size. */
 	public static Blueprint read(InputStream input, String fallbackName, BlueprintLimits limits) throws BlueprintException {
 		CompoundTag root;
 		try {
-			root = NbtIo.readCompressed(input, NbtAccounter.create(limits.maxNbtBytes()));
+			BufferedInputStream buffered = new BufferedInputStream(input);
+			buffered.mark(2);
+			int first = buffered.read();
+			int second = buffered.read();
+			buffered.reset();
+			NbtAccounter accounter = NbtAccounter.create(limits.maxNbtBytes());
+			if (first == 0x1f && second == 0x8b) {
+				root = NbtIo.readCompressed(buffered, accounter);
+			} else if (first == Tag.TAG_COMPOUND) {
+				root = NbtIo.read(new DataInputStream(buffered), accounter);
+			} else {
+				throw new BlueprintException("not_nbt");
+			}
 		} catch (NbtAccounterException e) {
 			throw new BlueprintException("too_complex", megabytes(limits.maxNbtBytes()));
 		} catch (ZipException e) {
-			throw new BlueprintException("not_compressed");
+			throw new BlueprintException("damaged");
 		} catch (IOException | RuntimeException e) {
 			// Truncated or garbled data, or a tag type that cannot occur in valid NBT.
 			throw new BlueprintException("not_nbt");
