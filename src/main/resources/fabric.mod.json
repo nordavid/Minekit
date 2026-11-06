@@ -3,7 +3,8 @@
 	"id": "minekit",
 	"version": "${version}",
 	"name": "Minekit",
-	"description": "Client-side utility suite for Minecraft Java Edition. Early development: no player-facing features yet.",
+	"description": "Client-side utility suite: inventory sorting with hotbar layout, crafting planner, resource tracker, storage finder, smart deposit, loadouts and quick actions. Works on any server; nothing needs to be installed there.",
+	"icon": "assets/minekit/icon.png",
 	"authors": [
 		"David Einenkel"
 	],
