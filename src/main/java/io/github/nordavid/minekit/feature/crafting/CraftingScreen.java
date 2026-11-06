@@ -1,5 +1,6 @@
 package io.github.nordavid.minekit.feature.crafting;
 
+import io.github.nordavid.minekit.core.item.CreativeGroups;
 import io.github.nordavid.minekit.core.item.InventoryCounts;
 import io.github.nordavid.minekit.core.item.ItemIds;
 import io.github.nordavid.minekit.core.screen.widget.ContentPane;
@@ -10,10 +11,12 @@ import io.github.nordavid.minekit.core.screen.widget.ToggleButton;
 import io.github.nordavid.minekit.core.screen.widget.UiText;
 import io.github.nordavid.minekit.core.search.TextSearch;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -38,7 +41,8 @@ import org.jspecify.annotations.Nullable;
 public final class CraftingScreen extends Screen {
 	private static final int MAX_PANEL_WIDTH = 580;
 	private static final int MAX_PANEL_HEIGHT = 320;
-	private static final int MAX_RESULTS = 200;
+	/** Category chosen last, so the planner reopens where the player was browsing. */
+	private static @Nullable String lastGroupId;
 	private static final int ROW = MinekitTheme.ROW_HEIGHT;
 
 	private final CraftingAssistantModule module;
@@ -52,6 +56,10 @@ public final class CraftingScreen extends Screen {
 	private @Nullable CraftingPlan plan;
 	private Map<String, Integer> inventory = Map.of();
 	private String query = "";
+	private List<CreativeGroups.Group> groups = List.of();
+	/** Index into {@link #groups}, or -1 for all categories. */
+	private int groupIndex = -1;
+	private @Nullable FlatButton groupButton;
 	private int ticksUntilInventoryCheck;
 
 	private int panelX;
@@ -119,6 +127,25 @@ public final class CraftingScreen extends Screen {
 		});
 		addRenderableWidget(search);
 		setInitialFocus(search);
+
+		Set<String> craftable = index.craftableItems();
+		groups = CreativeGroups.current().stream().filter(group -> group.items().stream().anyMatch(craftable::contains)).toList();
+		groupIndex = -1;
+		for (int i = 0; i < groups.size(); i++) {
+			if (groups.get(i).id().equals(lastGroupId)) {
+				groupIndex = i;
+			}
+		}
+		int arrow = 18;
+		FlatButton previous = addRenderableWidget(new FlatButton(panelX + 8, panelY + 50, arrow, ROW, Component.literal("\u25c0"),
+				button -> stepGroup(-1)));
+		previous.setTooltip(Tooltip.create(Component.translatable("minekit.crafting.group_previous")));
+		groupButton = addRenderableWidget(new FlatButton(panelX + 8 + arrow + 2, panelY + 50, leftWidth - 2 * arrow - 4, ROW, groupLabel(),
+				button -> stepGroup(1)));
+		groupButton.setTooltip(Tooltip.create(Component.translatable("minekit.crafting.group_tooltip")));
+		FlatButton next = addRenderableWidget(new FlatButton(panelX + 8 + leftWidth - arrow, panelY + 50, arrow, ROW, Component.literal("\u25b6"),
+				button -> stepGroup(1)));
+		next.setTooltip(Tooltip.create(Component.translatable("minekit.crafting.group_next")));
 
 		int headerY = panelY + 28;
 		minusButton = addRenderableWidget(new FlatButton(rightX + rightWidth - 92, headerY, 20, ROW, Component.literal("−"),
@@ -189,25 +216,91 @@ public final class CraftingScreen extends Screen {
 		}
 	}
 
+	/**
+	 * The craftable items on the left. Without a search they are listed like the creative inventory: by category, in
+	 * its order, so players can browse; with a search, ranked by how well they match. Always all of them.
+	 */
 	private void rebuildResults() {
 		resultWidgets.forEach(this::removeWidget);
 		resultWidgets.clear();
-		int top = panelY + 50;
+		int top = panelY + 50 + ROW + 4;
 		results.reset(panelX + 8, top, leftWidth, panelY + panelHeight - 8 - top);
-		List<String> matches = TextSearch.filter(new ArrayList<>(index.craftableItems()),
-				item -> ItemIds.name(item).getString() + " " + item, query);
-		for (String item : matches.subList(0, Math.min(matches.size(), MAX_RESULTS))) {
-			ItemButton button = addRenderableWidget(new ItemButton(0, 0, results.width(), ROW, ItemIds.icon(item), ItemIds.name(item),
-					() -> request != null && request.target().equals(item), () -> select(item)));
-			resultWidgets.add(results.widget(button));
+		Set<String> craftable = index.craftableItems();
+		if (craftable.isEmpty()) {
+			results.text(Component.translatable("minekit.crafting.no_recipes"), MinekitTheme.TEXT_MUTED);
+			results.layout();
+			return;
 		}
-		if (matches.isEmpty()) {
-			results.text(Component.translatable(index.craftableItems().isEmpty() ? "minekit.crafting.no_recipes" : "minekit.crafting.no_match"),
-					MinekitTheme.TEXT_MUTED);
-		} else if (matches.size() > MAX_RESULTS) {
-			results.text(Component.translatable("minekit.crafting.more_results", matches.size() - MAX_RESULTS), MinekitTheme.TEXT_MUTED);
+		if (query.isBlank() && groupIndex < 0) {
+			Set<String> shown = new HashSet<>();
+			for (CreativeGroups.Group group : groups) {
+				List<String> items = group.items().stream().filter(craftable::contains).filter(item -> !shown.contains(item)).toList();
+				if (!items.isEmpty()) {
+					results.heading(Component.translatable("minekit.crafting.group", group.name(), items.size()));
+					items.forEach(this::addResult);
+					shown.addAll(items);
+				}
+			}
+			List<String> others = craftable.stream().filter(item -> !shown.contains(item)).toList();
+			if (!others.isEmpty()) {
+				results.heading(Component.translatable("minekit.crafting.group", Component.translatable("minekit.crafting.group_other"),
+						others.size()));
+				others.forEach(this::addResult);
+			}
+		} else {
+			List<String> candidates = groupIndex < 0 ? new ArrayList<>(craftable)
+					: groups.get(groupIndex).items().stream().filter(craftable::contains).toList();
+			List<String> matches = TextSearch.filter(candidates, item -> ItemIds.name(item).getString() + " " + item, query);
+			matches.forEach(this::addResult);
+			if (matches.isEmpty()) {
+				results.text(Component.translatable("minekit.crafting.no_match"), MinekitTheme.TEXT_MUTED);
+			}
 		}
 		results.layout();
+	}
+
+	private void addResult(String item) {
+		ItemButton button = addRenderableWidget(new ItemButton(0, 0, results.width(), ROW, ItemIds.icon(item), ItemIds.name(item),
+				() -> request != null && request.target().equals(item), () -> select(item)));
+		resultWidgets.add(results.widget(button));
+	}
+
+	/** Steps through "all categories" and the creative categories that have craftable items. */
+	private void stepGroup(int delta) {
+		int count = groups.size() + 1;
+		int position = Math.floorMod(groupIndex + 1 + delta, count);
+		groupIndex = position - 1;
+		lastGroupId = groupIndex < 0 ? null : groups.get(groupIndex).id();
+		if (groupButton != null) {
+			groupButton.setMessage(groupLabel());
+		}
+		results.scrollToTop();
+		rebuildResults();
+	}
+
+	private Component groupLabel() {
+		if (groupIndex < 0) {
+			return Component.translatable("minekit.crafting.group_all");
+		}
+		return groups.get(groupIndex).name();
+	}
+
+	/** Number of items listed on the left, for tests. */
+	public int resultCount() {
+		return resultWidgets.size();
+	}
+
+	/** Number of craftable items, for tests. */
+	public int craftableCount() {
+		return index.craftableItems().size();
+	}
+
+	/** Shown categories, for tests: "all" first. */
+	public List<String> groupIds() {
+		List<String> ids = new ArrayList<>();
+		ids.add("all");
+		groups.forEach(group -> ids.add(group.id()));
+		return ids;
 	}
 
 	private void rebuildPlan() {
@@ -223,7 +316,6 @@ public final class CraftingScreen extends Screen {
 		}
 		if (!selected) {
 			plan = null;
-			planPane.text(Component.translatable("minekit.crafting.choose_item"), MinekitTheme.TEXT_MUTED);
 			planPane.layout();
 			return;
 		}
@@ -471,9 +563,31 @@ public final class CraftingScreen extends Screen {
 		if (request != null) {
 			graphics.item(ItemIds.icon(request.target()), rightX, panelY + 29);
 			UiText.draw(graphics, font, ItemIds.name(request.target()), rightX + 20, panelY + 33, rightWidth - 120, MinekitTheme.TEXT);
+		} else {
+			extractEmptyState(graphics);
 		}
 		planPane.extract(graphics, mouseX, mouseY);
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+	}
+
+	/** Nothing chosen yet: a short invitation, centered in the right half. */
+	private void extractEmptyState(GuiGraphicsExtractor graphics) {
+		int width = Math.min(rightWidth - 24, 260);
+		List<String> lines = new ArrayList<>(UiText.wrap(font, Component.translatable("minekit.crafting.choose_item").getString(), width, 3));
+		List<String> hint = UiText.wrap(font, Component.translatable("minekit.crafting.browse_hint").getString(), width, 3);
+		int lineHeight = MinekitTheme.LINE_HEIGHT;
+		int height = (lines.size() + hint.size()) * lineHeight + 6;
+		int top = panelY + 28 + (panelHeight - 36 - height) / 2;
+		int center = rightX + rightWidth / 2;
+		for (String line : lines) {
+			graphics.text(font, line, center - font.width(line) / 2, top, MinekitTheme.TEXT, false);
+			top += lineHeight;
+		}
+		top += 6;
+		for (String line : hint) {
+			graphics.text(font, line, center - font.width(line) / 2, top, MinekitTheme.TEXT_MUTED, false);
+			top += lineHeight;
+		}
 	}
 
 	@Override

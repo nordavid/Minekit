@@ -61,6 +61,13 @@ public final class CraftingGameTest implements FabricClientGameTest {
 		context.runOnClient(client -> open.run().run());
 		context.waitForScreen(CraftingScreen.class);
 		context.waitTick();
+		int[] counts = context.computeOnClient(client -> {
+			CraftingScreen screen = (CraftingScreen) client.gui.screen();
+			return new int[] {screen.resultCount(), screen.craftableCount(), screen.groupIds().size()};
+		});
+		check(counts[0] == counts[1] && counts[1] > 500, "every craftable item is listed, no cut-off, got " + counts[0] + " of " + counts[1]);
+		check(counts[2] >= 8, "the creative categories are offered for browsing, got " + counts[2]);
+		context.takeScreenshot("minekit-craft-00a-browse");
 		scrollbarDrags(context);
 		context.getInput().typeChars("piston");
 		context.waitTick();
