@@ -8,7 +8,7 @@ items in your chests, puts things away, swaps loadouts and helps you build from 
 Everything runs on your own client. Servers and other players need nothing installed, and Minekit only uses what a
 player has anyway: the items it can see and the clicks it could make by hand.
 
-> **Status:** 0.7.1, in active development. Every feature below is covered by unit tests and by automated tests in
+> **Status:** 0.8.0, in active development. Every feature below is covered by unit tests and by automated tests in
 > the real game client, in single player and on a dedicated server. See [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## Features
@@ -23,16 +23,16 @@ player has anyway: the items it can see and the clicks it could make by hand.
 - **Storage Finder.** Remembers what was in every container you opened and tells you where an item is.
 - **Smart Deposit.** Puts matching items into the open chest after a preview; your hotbar and favorites stay with you.
 - **Loadout Manager.** Saves where your armor, tools and blocks go, and restores it from your inventory or a chest.
-- **Blueprints and building tools.** Shows `.litematic`, `.schem` and `.schematic` files as a building guide in the
-  world, with progress, a 3D view, a layer plan, a material list and a measuring tool. It never places blocks.
+- **Blueprints and building tools.** Shows `.litematic`, `.schem` and `.schematic` files in the world as a building
+  guide, with progress, a 3D view, a layer plan, a material list and a measuring tool. It never places blocks.
 
 ## Installation
 
 You need Minecraft Java Edition **26.3**, Fabric Loader **0.20.1** or newer and Fabric API **0.165.2+26.3** or
 newer.
 
-1. Get `minekit-<version>.jar`. There are no prebuilt downloads yet; [build it](#building-from-source) with one
-   command.
+1. Download `minekit-<version>.jar` from the [latest release](https://github.com/nordavid/Minekit/releases/latest), or
+   [build it](#building-from-source) yourself.
 2. In the [Modrinth App](https://modrinth.com/app), create an instance with the loader **Fabric** and the game
    version **26.3**.
 3. Open the instance, choose *Add content* and install **Fabric API**.

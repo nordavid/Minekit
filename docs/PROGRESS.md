@@ -437,3 +437,32 @@ Found in the manual test of 0.7.0 with files from a schematic download site. Det
   works.
 - **MCEdit files:** tile entities and entities are not read (as for the other formats); blocks above id 255 (mods)
   stay unknown.
+
+## 0.8.0: The whole blueprint in the world, first public release (done, 2026-11-07)
+
+Requested after the 3D view: the whole structure in the world, not only in the screen, and the plan centered like the
+3D view. Details: [ADR 0008, second addendum](adr/0008-blueprints-and-building-tools.md#addendum-2026-11-07-version-080).
+
+- [x] World view *whole structure* (default): blocks still to place as see-through faces in their color, shaded per
+  side; wrong blocks red; correct blocks not drawn; only the outside of the layers being built; at most 12 000 faces,
+  the nearest; computed in the background
+- [x] World view *around me* (the previous guide) as a toggle on the Overview tab and a Quick Action; saved in
+  `blueprints.json` (`wholeStructure`, no new schema version: older files show the whole structure)
+- [x] Plan view centered; the block under the mouse still matches
+- [x] `CHANGELOG.md`; README links the GitHub release
+- [ ] Manual check in the Modrinth instance (0.8.0)
+
+### Verification log (2026-11-07)
+
+| Check | Result |
+|---|---|
+| Unit tests | All passed. New: `GhostShellTest` 5 (a solid 3 x 3 x 3 box shows only its 54 outer faces; glass hides nothing; the layer range cuts the structure open; world sides follow 200 random turns and mirrors; the nearest faces are kept), `BlueprintSettingsCodecTest` 3 (round trip, a 0.7 file without the new field, invalid entries ignored with warnings). |
+| Gametest: world view | The placed test tower shows its missing blocks as see-through gray stone and planks, the wrong stair red, the next block amber with "Stone". The Quick Action switches to *around me*: no whole-structure faces are drawn; switching back draws them again. |
+| Gametest: large structure | A 40 x 20 x 40 checkerboard of stone and glass (96 000 visible faces) placed beside the player: 11 994 faces drawn in 0.6 ms per tick. |
+| All gametests | All seven gametest classes pass. |
+
+### Known risks and limitations
+
+- **Colors, not textures:** the ghost uses map colors like the screen's views; blocks smaller than a cube are drawn as
+  cubes.
+- **Very large structures** show their nearest 12 000 faces; the rest appears as the player walks closer.
