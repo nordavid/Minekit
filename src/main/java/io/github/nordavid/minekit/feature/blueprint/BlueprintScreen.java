@@ -599,10 +599,11 @@ public final class BlueprintScreen extends Screen {
 
 	private void extractEmptyState(GuiGraphicsExtractor graphics) {
 		Component message = module.isLoading() ? Component.translatable("minekit.blueprint.loading")
-				: module.failedFile().isPresent() ? Component.translatable("minekit.blueprint.failed", module.failedFile().get())
+				: module.failedFile().isPresent() ? Component.translatable("minekit.blueprint.failed", module.failedFile().get(),
+						module.failureReason().orElse(Component.empty()))
 						: Component.translatable("minekit.blueprint.choose");
 		int width = Math.min(rightWidth - 24, 280);
-		List<String> lines = UiText.wrap(font, message.getString(), width, 6);
+		List<String> lines = UiText.wrap(font, message.getString(), width, 10);
 		int top = panelY + 28 + (panelHeight - 36 - lines.size() * LINE) / 2;
 		for (String line : lines) {
 			graphics.text(font, line, rightX + rightWidth / 2 - font.width(line) / 2, top, MinekitTheme.TEXT_MUTED, false);

@@ -459,7 +459,7 @@
 	"minekit.blueprint.no_files": "No blueprints yet.",
 	"minekit.blueprint.choose": "Choose a blueprint on the left, or drop a .litematic, .schem or .schematic file onto this window. Minekit copies it into its blueprint folder; the original stays untouched.",
 	"minekit.blueprint.loading": "Loading the blueprint…",
-	"minekit.blueprint.failed": "%s could not be loaded. The message said why.",
+	"minekit.blueprint.failed": "%s could not be loaded: %s. Replace the file or choose another one.",
 	"minekit.blueprint.info": "%s × %s × %s · %s blocks · %s",
 	"minekit.blueprint.tab.overview": "Overview",
 	"minekit.blueprint.tab.layers": "Layers",

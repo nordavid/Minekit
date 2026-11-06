@@ -459,7 +459,7 @@
 	"minekit.blueprint.no_files": "Noch keine Baupläne.",
 	"minekit.blueprint.choose": "Wähle links einen Bauplan oder zieh eine .litematic-, .schem- oder .schematic-Datei auf dieses Fenster. Minekit kopiert sie in seinen Bauplan-Ordner; das Original bleibt unverändert.",
 	"minekit.blueprint.loading": "Lade den Bauplan…",
-	"minekit.blueprint.failed": "%s konnte nicht geladen werden. Die Meldung sagt, warum.",
+	"minekit.blueprint.failed": "%s konnte nicht geladen werden: %s. Ersetze die Datei oder wähle eine andere.",
 	"minekit.blueprint.info": "%s × %s × %s · %s Blöcke · %s",
 	"minekit.blueprint.tab.overview": "Übersicht",
 	"minekit.blueprint.tab.layers": "Schichten",

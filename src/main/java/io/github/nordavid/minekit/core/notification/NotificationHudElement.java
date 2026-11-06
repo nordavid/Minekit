@@ -15,7 +15,8 @@ import net.minecraft.util.ARGB;
 
 /**
  * Shows {@link NotificationService} messages as small stacked cards. The newest card is closest to the anchor.
- * Cards take at most a third of the screen width and wrap to three lines.
+ * Cards take at most a third of the screen width and wrap to three lines; warnings and errors to six, so their reason
+ * stays readable.
  */
 public final class NotificationHudElement implements MinekitHudElement {
 	public static final String ID = "notifications";
@@ -23,6 +24,7 @@ public final class NotificationHudElement implements MinekitHudElement {
 	private static final int MAX_WIDTH = 220;
 	private static final int MIN_WIDTH = 100;
 	private static final int MAX_LINES = 3;
+	private static final int MAX_PROBLEM_LINES = 6;
 	private static final int LINE_HEIGHT = 10;
 	private static final int VERTICAL_PADDING = 4;
 	private static final int TEXT_PADDING = 6;
@@ -72,7 +74,9 @@ public final class NotificationHudElement implements MinekitHudElement {
 		int width = 0;
 		int height = 0;
 		for (NotificationQueue.Visible<Component> visible : notifications.visibleNow()) {
-			List<String> lines = UiText.wrap(font, visible.message().getString(), maxTextWidth, MAX_LINES);
+			NotificationLevel level = visible.level();
+			int maxLines = level == NotificationLevel.WARNING || level == NotificationLevel.ERROR ? MAX_PROBLEM_LINES : MAX_LINES;
+			List<String> lines = UiText.wrap(font, visible.message().getString(), maxTextWidth, maxLines);
 			int textWidth = lines.stream().mapToInt(font::width).max().orElse(0);
 			Card card = new Card(visible, lines, textWidth + BAR_WIDTH + 2 * TEXT_PADDING, lines.size() * LINE_HEIGHT + 2 * VERTICAL_PADDING);
 			cards.add(card);
