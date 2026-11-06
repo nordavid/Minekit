@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-/** Finds MINEKIT shortcuts that share a key with another shortcut. Pure logic, independent of Minecraft. */
+/** Finds Minekit shortcuts that share a key with another shortcut. Pure logic, independent of Minecraft. */
 public final class KeyConflicts {
 	/** Key name Minecraft uses for an unbound mapping. */
 	public static final String UNBOUND = "key.keyboard.unknown";
@@ -16,7 +16,7 @@ public final class KeyConflicts {
 	public record Binding(String mappingName, String key) {
 	}
 
-	/** {@code ownMapping} (a MINEKIT shortcut) is bound to the same {@code key} as {@code otherMapping}. */
+	/** {@code ownMapping} (a Minekit shortcut) is bound to the same {@code key} as {@code otherMapping}. */
 	public record Conflict(String ownMapping, String otherMapping, String key) {
 	}
 
@@ -24,9 +24,9 @@ public final class KeyConflicts {
 	}
 
 	/**
-	 * @param ownMappings names of the MINEKIT mappings
-	 * @param all         every registered mapping, including the MINEKIT ones
-	 * @return one entry per conflicting pair; a pair of two MINEKIT mappings is reported once
+	 * @param ownMappings names of the Minekit mappings
+	 * @param all         every registered mapping, including the Minekit ones
+	 * @return one entry per conflicting pair; a pair of two Minekit mappings is reported once
 	 */
 	public static List<Conflict> find(Set<String> ownMappings, List<Binding> all) {
 		List<Conflict> conflicts = new ArrayList<>();

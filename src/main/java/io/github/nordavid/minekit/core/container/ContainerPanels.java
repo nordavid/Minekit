@@ -5,7 +5,7 @@ import java.util.List;
 import net.minecraft.client.gui.screens.Screen;
 
 /**
- * Coordinates MINEKIT's side panels in a container screen (Smart Deposit, loadouts). They share the space left of the
+ * Coordinates Minekit's side panels in a container screen (Smart Deposit, loadouts). They share the space left of the
  * container, so at most one is open: opening one closes the others, and their opener buttons hide while it is open.
  */
 public final class ContainerPanels {

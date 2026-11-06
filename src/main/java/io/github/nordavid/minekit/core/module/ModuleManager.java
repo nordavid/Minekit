@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
  * and the game keep running. Not thread-safe; used from the client thread only.
  */
 public final class ModuleManager {
-	private static final Logger LOGGER = LoggerFactory.getLogger("MINEKIT");
+	private static final Logger LOGGER = LoggerFactory.getLogger("Minekit");
 
 	/** Where the user's enabled/disabled choice is stored. */
 	public interface Settings {
@@ -141,12 +141,12 @@ public final class ModuleManager {
 		try {
 			slot.module.onDisable();
 		} catch (RuntimeException | LinkageError e) {
-			LOGGER.error("MINEKIT module '{}' threw while being disabled", slot.metadata.id(), e);
+			LOGGER.error("Minekit module '{}' threw while being disabled", slot.metadata.id(), e);
 		}
 	}
 
 	private void markFailed(Slot slot, String phase, Throwable error) {
-		LOGGER.error("MINEKIT module '{}' failed to {} and is inactive until the next start", slot.metadata.id(), phase, error);
+		LOGGER.error("Minekit module '{}' failed to {} and is inactive until the next start", slot.metadata.id(), phase, error);
 		slot.state = ModuleState.FAILED;
 		slot.failure = error.getClass().getSimpleName() + (error.getMessage() == null ? "" : ": " + error.getMessage());
 	}

@@ -114,7 +114,7 @@ public final class ResourceTrackerGameTest implements FabricClientGameTest {
 
 	private static void check(boolean condition, String description) {
 		if (!condition) {
-			throw new AssertionError("MINEKIT resource tracker gametest failed: " + description);
+			throw new AssertionError("Minekit resource tracker gametest failed: " + description);
 		}
 	}
 }

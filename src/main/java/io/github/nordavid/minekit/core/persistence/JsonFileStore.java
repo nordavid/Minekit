@@ -28,18 +28,18 @@ import org.slf4j.LoggerFactory;
  * <p>Guarantees:
  * <ul>
  *   <li>A missing, corrupt or unreadable file never prevents the game from starting; defaults are used instead.</li>
- *   <li>A corrupt file is moved aside before defaults are written, a file from a newer MINEKIT is copied aside
+ *   <li>A corrupt file is moved aside before defaults are written, a file from a newer Minekit is copied aside
  *       before it is first overwritten, and an unreadable file is never overwritten.</li>
  *   <li>Writes go to a temporary file that is then moved over the original, so a crash mid-write cannot leave a
  *       half-written file behind.</li>
  * </ul>
  *
- * <p>Not thread-safe. MINEKIT uses it from the client thread only.
+ * <p>Not thread-safe. Minekit uses it from the client thread only.
  *
  * @param <T> the immutable model type
  */
 public class JsonFileStore<T> {
-	private static final Logger LOGGER = LoggerFactory.getLogger("MINEKIT");
+	private static final Logger LOGGER = LoggerFactory.getLogger("Minekit");
 	private static final DateTimeFormatter BACKUP_STAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").withZone(ZoneOffset.UTC);
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
@@ -103,7 +103,7 @@ public class JsonFileStore<T> {
 		current = decoded.value();
 		decoded.warnings().forEach(warning -> LOGGER.warn("{}: {}", file.getFileName(), warning));
 		if (decoded.schemaVersion() > codec.schemaVersion()) {
-			LOGGER.warn("{} was written by a newer MINEKIT (schema {} > {}); it will be backed up before it is changed",
+			LOGGER.warn("{} was written by a newer Minekit (schema {} > {}); it will be backed up before it is changed",
 					file, decoded.schemaVersion(), codec.schemaVersion());
 			backupBeforeNextSave = true;
 			return new LoadResult(Status.NEWER_SCHEMA, decoded.warnings(), Optional.empty());
@@ -151,7 +151,7 @@ public class JsonFileStore<T> {
 			if (backupBeforeNextSave && Files.exists(file)) {
 				Path backup = siblingWithSuffix(".newer-schema-" + stamp() + ".bak");
 				Files.copy(file, backup, StandardCopyOption.REPLACE_EXISTING);
-				LOGGER.info("Backed up {} from a newer MINEKIT to {}", file.getFileName(), backup);
+				LOGGER.info("Backed up {} from a newer Minekit to {}", file.getFileName(), backup);
 			}
 			backupBeforeNextSave = false;
 			writeAtomically(GSON.toJson(codec.encode(current)) + System.lineSeparator());

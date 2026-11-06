@@ -29,33 +29,33 @@ Facts about Minecraft 26.3 and Fabric API 0.165.2 that shaped the design:
 2. **Module lifecycle.** `MinekitModule.initialize` runs once at startup and registers key mappings and callbacks.
    Every callback checks `ModuleContext.isEnabled()`. `onEnable`/`onDisable` only switch state, for example closing the
    module's screen. `ModuleManager` catches exceptions from all lifecycle methods. A failing module is marked `FAILED`
-   and stays inactive for the session, while the rest of MINEKIT keeps working.
+   and stays inactive for the session, while the rest of Minekit keeps working.
 3. **Configuration.** One JSON file, `config/minekit/config.json`, in the Fabric config directory. It is read and
    written with Gson, which Minecraft already ships, so there is no new dependency. A hand-written codec validates each
    field. Invalid entries are dropped with a warning instead of rejecting the file. Only values the player changed are
    stored, because defaults belong to the owning code. The file carries a `schemaVersion`. The safety rules:
    - A corrupt file is moved to `config.json.corrupt-<time>`, then defaults are written.
-   - A file from a newer MINEKIT is copied to `config.json.newer-schema-<time>.bak` before its first overwrite.
+   - A file from a newer Minekit is copied to `config.json.newer-schema-<time>.bak` before its first overwrite.
    - A file that cannot be read is never overwritten during that session.
    - Every write goes to a temporary file first, which then atomically replaces the original.
 
    No migration exists yet. The first incompatible format change bumps `ConfigCodec.SCHEMA_VERSION` and adds the step.
-4. **UI toolkit.** MINEKIT uses its own small widgets (`FlatButton`, `NavButton`, `ToggleButton`, `ContentPane`) on top
+4. **UI toolkit.** Minekit uses its own small widgets (`FlatButton`, `NavButton`, `ToggleButton`, `ContentPane`) on top
    of vanilla `Screen`. Colors and spacing are shared through `MinekitTheme`. All widgets extend vanilla `Button`, so
    keyboard focus, narration and tools that look for buttons (including the gametest API) work the same as with
-   vanilla buttons. Rebinding keys uses the vanilla controls screen. MINEKIT does not have its own key-binding UI.
+   vanilla buttons. Rebinding keys uses the vanilla controls screen. Minekit does not have its own key-binding UI.
 5. **Dashboard scope.** The dashboard lists only pages backed by real functionality: Overview and Settings. Later
    phases add their pages. It remembers the last page for the session.
 6. **Shortcuts.** By default, `K` opens the dashboard and `J` opens Quick Actions. Both keys are unbound in vanilla.
-   All MINEKIT shortcuts live in a "MINEKIT" category. The Overview page lists MINEKIT shortcuts that share a key with
+   All Minekit shortcuts live in a "Minekit" category. The Overview page lists Minekit shortcuts that share a key with
    another mapping. Vanilla also highlights such conflicts in red.
-7. **HUD and notifications.** A single Fabric HUD element (`minekit:hud`) draws all MINEKIT HUD elements in order.
+7. **HUD and notifications.** A single Fabric HUD element (`minekit:hud`) draws all Minekit HUD elements in order.
    Each element's `visible`, `anchor` and offsets come from the config. An element that throws is switched off for the
    session. Notifications are the first element. They are also drawn after every screen (`ScreenEvents.afterExtract`),
    so feedback from the dashboard is visible. Their display time starts when they are first drawn, so messages posted
    during startup are not lost.
 8. **In-game tests.** Client gametests live in a separate `gametest` source set and test mod (`minekit_gametest`),
-   which is never part of the MINEKIT JAR. They are not wired into `check` because they open a game window. They are
+   which is never part of the Minekit JAR. They are not wired into `check` because they open a game window. They are
    run with `gradlew runClientGameTest` before each phase is signed off.
 9. **Still no mixins, reflection or networking.**
 

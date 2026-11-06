@@ -50,7 +50,7 @@ import org.slf4j.LoggerFactory;
 public final class StorageFinderModule implements MinekitModule {
 	public static final ModuleMetadata METADATA = new ModuleMetadata("storage_finder",
 			"minekit.module.storage_finder.name", "minekit.module.storage_finder.description", true);
-	private static final Logger LOGGER = LoggerFactory.getLogger("MINEKIT");
+	private static final Logger LOGGER = LoggerFactory.getLogger("Minekit");
 
 	private final Path directory;
 	private final ContainerTracker tracker;

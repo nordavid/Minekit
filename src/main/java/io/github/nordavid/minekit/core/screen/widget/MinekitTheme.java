@@ -1,7 +1,7 @@
 package io.github.nordavid.minekit.core.screen.widget;
 
 /**
- * Shared visual tokens for all MINEKIT screens and HUD elements. Colors are ARGB.
+ * Shared visual tokens for all Minekit screens and HUD elements. Colors are ARGB.
  *
  * <p>Restrained dark palette with a single accent, as described in PROJECT_PLAN.md §5.3. Change values here rather
  * than in individual screens so the UI stays consistent.

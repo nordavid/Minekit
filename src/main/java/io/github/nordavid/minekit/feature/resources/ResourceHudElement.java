@@ -17,7 +17,7 @@ import net.minecraft.network.chat.Component;
 
 /**
  * Small HUD panel for the open resource session: duration and either goal progress or the most collected items.
- * Hidden while no session is open; movable and hideable in the dashboard settings like every MINEKIT HUD element.
+ * Hidden while no session is open; movable and hideable in the dashboard settings like every Minekit HUD element.
  */
 final class ResourceHudElement implements MinekitHudElement {
 	static final String ID = "resource_session";

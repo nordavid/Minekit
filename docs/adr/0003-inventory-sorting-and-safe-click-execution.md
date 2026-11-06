@@ -49,7 +49,7 @@ Facts about Minecraft 26.3 that shaped the design:
    - After the last click it waits 10 ticks for late corrections before reporting success.
    - On a stop, an item left on the cursor is put into a free slot of the sort region.
    - It compares the item totals of the whole menu plus the cursor before and after, and reports the result.
-5. **Sorting happens in the visible vanilla inventory screen.** After the player confirms the preview, MINEKIT opens
+5. **Sorting happens in the visible vanilla inventory screen.** After the player confirms the preview, Minekit opens
    the inventory screen exactly as the inventory key does and clicks there, so the player sees every move. It never
    clicks without an open screen. Closing the screen stops the sort.
 6. **Where sorting is not offered:** creative and spectator mode (creative inventory actions are privileged), while
@@ -61,9 +61,9 @@ Facts about Minecraft 26.3 that shaped the design:
 8. **Categories** come from tags, data components and the item class, in a fixed rule order: armor, weapons, tools,
    potions as utility, food, resources, other utility, blocks, misc. Ores and storage blocks count as resources.
 9. **Favorites are item types** (e.g. `minecraft:diamond_pickaxe`) and apply in all worlds. They are set by clicking
-   an item in the sort preview. That screen is MINEKIT's own, so it needs no mixin. Marking favorites directly in the
+   an item in the sort preview. That screen is Minekit's own, so it needs no mixin. Marking favorites directly in the
    vanilla inventory would need a mixin accessor (see Context). It is postponed until it is clearly worth one.
-10. **Shortcut `R`** opens the preview in game and in the inventory screen. In the inventory screen MINEKIT first closes
+10. **Shortcut `R`** opens the preview in game and in the inventory screen. In the inventory screen Minekit first closes
     the inventory the vanilla way, which returns crafting-grid and cursor items. While a sort runs, `R` cancels it.
 11. **Settings** are stored in `config/minekit/inventory.json`: active profile, changed category orders, hotbar
     protection and favorites. The file is written by the generic `JsonFileStore` extracted from the Phase 1 config

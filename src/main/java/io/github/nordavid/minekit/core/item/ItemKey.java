@@ -4,7 +4,7 @@ import java.util.Comparator;
 import java.util.Objects;
 
 /**
- * Identity of an item stack for MINEKIT's logic: registry id plus a variant that distinguishes data components.
+ * Identity of an item stack for Minekit's logic: registry id plus a variant that distinguishes data components.
  *
  * <p>Two stacks have the same key exactly when Minecraft would merge them ({@code ItemStack.isSameItemSameComponents}).
  * The Minecraft adapter guarantees that; pure logic may therefore treat equal keys as mergeable. Display names are

@@ -17,7 +17,7 @@ public record LoadResult(Status status, List<String> warnings, Optional<Path> ba
 		CREATED,
 		/** The file was read; individual entries may still have been ignored (see warnings). */
 		LOADED,
-		/** The file was written by a newer MINEKIT. It is backed up before it is first changed. */
+		/** The file was written by a newer Minekit. It is backed up before it is first changed. */
 		NEWER_SCHEMA,
 		/** The file could not be parsed. It was moved to a backup and defaults are used. */
 		RECOVERED_CORRUPT,

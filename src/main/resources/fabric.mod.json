@@ -2,7 +2,7 @@
 	"schemaVersion": 1,
 	"id": "minekit",
 	"version": "${version}",
-	"name": "MINEKIT",
+	"name": "Minekit",
 	"description": "Client-side utility suite for Minecraft Java Edition. Early development: no player-facing features yet.",
 	"authors": [
 		"David Einenkel"

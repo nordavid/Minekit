@@ -444,7 +444,7 @@ public final class StorageDepositGameTest implements FabricClientGameTest {
 
 	private static void check(boolean condition, String description) {
 		if (!condition) {
-			throw new AssertionError("MINEKIT storage gametest failed: " + description);
+			throw new AssertionError("Minekit storage gametest failed: " + description);
 		}
 	}
 }

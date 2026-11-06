@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
  * written to the log. Client thread only.
  */
 public final class NotificationService {
-	private static final Logger LOGGER = LoggerFactory.getLogger("MINEKIT");
+	private static final Logger LOGGER = LoggerFactory.getLogger("Minekit");
 
 	private final NotificationQueue<Component> queue = new NotificationQueue<>(3, 16, 4_000, 400);
 

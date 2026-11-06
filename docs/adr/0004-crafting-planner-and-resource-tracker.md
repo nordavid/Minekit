@@ -48,8 +48,8 @@ files are part of the client JAR, because the client contains the integrated ser
 7. **Goals** belong to the open session: an item and a target amount. Progress is the collected amount. Goals come
    from the item in hand or from the Crafting Assistant's "Add as goals". That button uses a small core `GoalBridge`,
    so the two features do not depend on each other.
-8. **HUD:** the session panel is the second MINEKIT HUD element (top left by default). It can be moved and hidden
-   like every MINEKIT HUD element.
+8. **HUD:** the session panel is the second Minekit HUD element (top left by default). It can be moved and hidden
+   like every Minekit HUD element.
 
 ## Consequences
 

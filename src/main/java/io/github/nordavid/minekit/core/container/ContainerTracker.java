@@ -35,7 +35,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Knows which container block the open container screen belongs to.
  *
- * <p>Minecraft does not tell the client where a container screen comes from. MINEKIT therefore only trusts a screen
+ * <p>Minecraft does not tell the client where a container screen comes from. Minekit therefore only trusts a screen
  * when three things agree:
  * <ol>
  *   <li>it opens shortly after the player right-clicked a supported container block,</li>
@@ -84,12 +84,12 @@ public final class ContainerTracker {
 		ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> onScreenInit(client, screen));
 	}
 
-	/** The container the player has open right now, if MINEKIT identified and confirmed it. */
+	/** The container the player has open right now, if Minekit identified and confirmed it. */
 	public Optional<OpenedContainer> current() {
 		return Optional.ofNullable(current);
 	}
 
-	/** The container behind a given screen, if it is the one MINEKIT identified and confirmed. */
+	/** The container behind a given screen, if it is the one Minekit identified and confirmed. */
 	public Optional<OpenedContainer> of(Screen screen) {
 		return screen instanceof AbstractContainerScreen<?> containerScreen && current != null && current.menu() == containerScreen.getMenu()
 				? Optional.of(current)
@@ -221,7 +221,7 @@ public final class ContainerTracker {
 		};
 	}
 
-	/** The kind of container a block opens, or {@code null} if MINEKIT does not support it. */
+	/** The kind of container a block opens, or {@code null} if Minekit does not support it. */
 	public static OpenedContainer.@Nullable Kind kindOf(Block block) {
 		if (block instanceof ChestBlock) {
 			return OpenedContainer.Kind.CHEST; // includes trapped and copper chests

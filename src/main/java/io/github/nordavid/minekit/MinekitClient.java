@@ -57,16 +57,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Client entrypoint of MINEKIT and composition root: creates the core services, registers modules and hooks
+ * Client entrypoint of Minekit and composition root: creates the core services, registers modules and hooks
  * everything into Fabric.
  *
- * <p>MINEKIT is client-only by design: {@code fabric.mod.json} declares {@code "environment": "client"} and this is
+ * <p>Minekit is client-only by design: {@code fabric.mod.json} declares {@code "environment": "client"} and this is
  * the only entrypoint. There is deliberately no main or server entrypoint and no networking.
  */
 public final class MinekitClient implements ClientModInitializer {
 	public static final String MOD_ID = "minekit";
 
-	private static final Logger LOGGER = LoggerFactory.getLogger("MINEKIT");
+	private static final Logger LOGGER = LoggerFactory.getLogger("Minekit");
 
 	@Override
 	public void onInitializeClient() {
@@ -162,9 +162,9 @@ public final class MinekitClient implements ClientModInitializer {
 				.forEach(module -> notifications.error(Component.translatable("minekit.notification.module_failed",
 						Component.translatable(module.metadata().nameKey()))));
 
-		LOGGER.info("MINEKIT {} initialized (client-only) on Minecraft {} with Fabric Loader {}",
+		LOGGER.info("Minekit {} initialized (client-only) on Minecraft {} with Fabric Loader {}",
 				versions.mod(), versions.minecraft(), versionOf(loader, "fabricloader"));
-		LOGGER.info("MINEKIT config {} ({}), modules: {}, hud: {}", config.file(), configResult.status(),
+		LOGGER.info("Minekit config {} ({}), modules: {}, hud: {}", config.file(), configResult.status(),
 				modules.modules().stream().map(module -> module.metadata().id() + "=" + module.state()).toList(),
 				hud.elements().stream().map(element -> {
 					var settings = hud.settings(element);

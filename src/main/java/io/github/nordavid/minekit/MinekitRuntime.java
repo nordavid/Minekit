@@ -70,14 +70,14 @@ public record MinekitRuntime(
 	public static MinekitRuntime get() {
 		MinekitRuntime runtime = current;
 		if (runtime == null) {
-			throw new IllegalStateException("MINEKIT is not initialized yet");
+			throw new IllegalStateException("Minekit is not initialized yet");
 		}
 		return runtime;
 	}
 
 	static void install(MinekitRuntime runtime) {
 		if (current != null) {
-			throw new IllegalStateException("MINEKIT is already initialized");
+			throw new IllegalStateException("Minekit is already initialized");
 		}
 		current = Objects.requireNonNull(runtime, "runtime");
 	}

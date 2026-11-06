@@ -141,7 +141,7 @@ public final class CraftingGameTest implements FabricClientGameTest {
 
 	private static void check(boolean condition, String description) {
 		if (!condition) {
-			throw new AssertionError("MINEKIT crafting gametest failed: " + description);
+			throw new AssertionError("Minekit crafting gametest failed: " + description);
 		}
 	}
 }

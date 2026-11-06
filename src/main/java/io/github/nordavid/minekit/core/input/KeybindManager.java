@@ -15,15 +15,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Central registry for MINEKIT shortcuts.
+ * Central registry for Minekit shortcuts.
  *
- * <p>All shortcuts live in one "MINEKIT" category of the vanilla controls screen, so players rebind them where they
+ * <p>All shortcuts live in one "Minekit" category of the vanilla controls screen, so players rebind them where they
  * rebind everything else. Shortcuts must be registered during client initialization, before Minecraft loads its
  * options. Handlers run on the client thread at the end of each client tick; as in vanilla, presses only count
  * while no screen is open.
  */
 public final class KeybindManager {
-	private static final Logger LOGGER = LoggerFactory.getLogger("MINEKIT");
+	private static final Logger LOGGER = LoggerFactory.getLogger("Minekit");
 
 	private record Binding(KeyMapping mapping, Runnable onPress) {
 	}
@@ -69,7 +69,7 @@ public final class KeybindManager {
 		}
 	}
 
-	/** MINEKIT shortcuts that share their key with another shortcut, based on the player's current bindings. */
+	/** Minekit shortcuts that share their key with another shortcut, based on the player's current bindings. */
 	public List<KeyConflicts.Conflict> conflicts(Options options) {
 		Set<String> own = new HashSet<>();
 		bindings.forEach(binding -> own.add(binding.mapping().getName()));

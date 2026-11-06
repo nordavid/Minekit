@@ -39,7 +39,7 @@ public final class ContainerActionExecutor {
 	public static final int CLICK_INTERVAL_TICKS = 2;
 	public static final int SETTLE_TICKS = 10;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger("MINEKIT");
+	private static final Logger LOGGER = LoggerFactory.getLogger("Minekit");
 
 	public enum Outcome {
 		/** The goal was reached and no correction arrived during the settle time. */

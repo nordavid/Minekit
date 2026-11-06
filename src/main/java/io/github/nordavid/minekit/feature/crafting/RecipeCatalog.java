@@ -53,7 +53,7 @@ import org.slf4j.LoggerFactory;
  * item. Client thread only.
  */
 public final class RecipeCatalog {
-	private static final Logger LOGGER = LoggerFactory.getLogger("MINEKIT");
+	private static final Logger LOGGER = LoggerFactory.getLogger("Minekit");
 
 	private RecipeCatalog() {
 	}

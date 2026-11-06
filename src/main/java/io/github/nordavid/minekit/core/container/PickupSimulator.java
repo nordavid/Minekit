@@ -13,7 +13,7 @@ import java.util.function.ToIntFunction;
  *   <li>same item on cursor and in slot: move as much as fits, the rest stays on the cursor</li>
  *   <li>different items: swap</li>
  * </ul>
- * MINEKIT compares the real state after each click with this prediction and stops on any difference.
+ * Minekit compares the real state after each click with this prediction and stops on any difference.
  */
 public final class PickupSimulator {
 	private PickupSimulator() {

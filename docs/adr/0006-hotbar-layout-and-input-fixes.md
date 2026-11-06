@@ -50,8 +50,8 @@ The first manual test in the Modrinth instance found three problems:
    **?** button that switches to a short explanation, and the profile's description now stands under the profile
    button. Swallowing the mouse release over the panel also ends the screen's drag state, which the skipped vanilla
    release would have done.
-5. **Gametests click MINEKIT controls with the real mouse** (`GameTestMouse`: cursor position plus mouse button),
-   not with `clickScreenButton`, wherever MINEKIT adds widgets to a screen it does not own, and for every new control.
+5. **Gametests click Minekit controls with the real mouse** (`GameTestMouse`: cursor position plus mouse button),
+   not with `clickScreenButton`, wherever Minekit adds widgets to a screen it does not own, and for every new control.
    The deposit test now clicks *?*, cycles all profiles and starts the deposit this way.
 6. **Draggable scrollbars in every list** (`ContentPane`, used by the dashboard, the Crafting Assistant and the
    Storage Finder). The bar is 4 pixels wide with an 8 pixel grab area; it lights up on hover and while dragged. A

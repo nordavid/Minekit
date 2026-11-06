@@ -9,9 +9,9 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 
 /**
- * Dark, flat push button in the MINEKIT style.
+ * Dark, flat push button in the Minekit style.
  *
- * <p>MINEKIT widgets extend vanilla {@link Button} (not just {@code AbstractButton}) so that tools which look for
+ * <p>Minekit widgets extend vanilla {@link Button} (not just {@code AbstractButton}) so that tools which look for
  * buttons, such as the Fabric client gametest API, treat them like vanilla buttons.
  */
 public class FlatButton extends Button {

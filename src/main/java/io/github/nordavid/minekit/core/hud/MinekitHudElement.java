@@ -7,7 +7,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 /**
- * A MINEKIT HUD element. {@link HudManager} decides whether and where it is drawn, based on the player's settings.
+ * A Minekit HUD element. {@link HudManager} decides whether and where it is drawn, based on the player's settings.
  *
  * <p>Implementations must be cheap: {@link #measure} and {@link #extract} run every frame.
  */

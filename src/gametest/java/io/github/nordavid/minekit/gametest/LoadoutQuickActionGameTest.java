@@ -43,7 +43,7 @@ import net.minecraft.world.item.ItemStack;
 /**
  * Phase 5 in the real client: Quick Actions pinned with Ctrl+P and the star, run with a number key; actions for the
  * held item; a loadout saved, compared and applied in the inventory; a loadout taken from a chest (single player and
- * a dedicated server); the side panels sharing their space; and the dashboard pages. Clicks on MINEKIT controls use
+ * a dedicated server); the side panels sharing their space; and the dashboard pages. Clicks on Minekit controls use
  * the real mouse.
  */
 public final class LoadoutQuickActionGameTest implements FabricClientGameTest {
@@ -377,7 +377,7 @@ public final class LoadoutQuickActionGameTest implements FabricClientGameTest {
 
 	private static void check(boolean condition, String description) {
 		if (!condition) {
-			throw new AssertionError("MINEKIT phase 5 gametest failed: " + description);
+			throw new AssertionError("Minekit phase 5 gametest failed: " + description);
 		}
 	}
 }

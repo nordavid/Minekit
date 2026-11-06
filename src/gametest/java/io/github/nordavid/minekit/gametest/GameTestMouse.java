@@ -12,7 +12,7 @@ import net.minecraft.network.chat.contents.TranslatableContents;
  * Clicks and drags with the real mouse, like a player.
  *
  * <p>Fabric's {@code clickScreenButton} presses a button directly and skips the screen's own click handling, so it
- * cannot notice a widget that another one covers. MINEKIT widgets inside other screens (Smart Deposit's panel) are
+ * cannot notice a widget that another one covers. Minekit widgets inside other screens (Smart Deposit's panel) are
  * therefore clicked through the mouse here.
  */
 final class GameTestMouse {

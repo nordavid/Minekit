@@ -20,7 +20,7 @@ import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Main MINEKIT screen: a sidebar with the visible {@link DashboardPage}s and a scrolling content area.
+ * Main Minekit screen: a sidebar with the visible {@link DashboardPage}s and a scrolling content area.
  */
 public final class DashboardScreen extends Screen {
 	private static final int MAX_PANEL_WIDTH = 460;
@@ -161,7 +161,7 @@ public final class DashboardScreen extends Screen {
 		graphics.fill(panelX + 1, panelY + 1, panelX + sidebarWidth, panelY + panelHeight - 1, MinekitTheme.SIDEBAR);
 		graphics.verticalLine(panelX + sidebarWidth, panelY + 1, panelY + panelHeight - 2, MinekitTheme.PANEL_BORDER);
 
-		graphics.text(font, "MINEKIT", panelX + 10, panelY + 10, MinekitTheme.ACCENT, false);
+		graphics.text(font, "Minekit", panelX + 10, panelY + 10, MinekitTheme.ACCENT, false);
 		UiText.draw(graphics, font, Component.literal(runtime.versions().mod()), panelX + 10, panelY + 21, sidebarWidth - 14,
 				MinekitTheme.TEXT_MUTED);
 

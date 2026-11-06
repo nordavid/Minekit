@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * used ones. The star on each row, or Ctrl+P, pins and unpins an action.
  */
 public final class QuickActionsScreen extends Screen {
-	private static final Logger LOGGER = LoggerFactory.getLogger("MINEKIT");
+	private static final Logger LOGGER = LoggerFactory.getLogger("Minekit");
 
 	private static final int MAX_PANEL_WIDTH = 260;
 	private static final int ROW_HEIGHT = 20;
