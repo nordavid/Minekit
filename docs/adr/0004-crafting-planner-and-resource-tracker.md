@@ -59,3 +59,15 @@ files are part of the client JAR, because the client contains the integrated ser
   available.
 - The tracker cannot tell mining from picking up a dropped item, nor placing a block from throwing it. Both count
   under the deliberately broad labels "collected" and "used or given away".
+
+## Addendum (2026-11-06, version 0.6.1)
+
+- **Resource sessions belong to a world.** The single global open session followed the player into every world and
+  server and could count there. Each world or server now has its own open session, keyed by the same world ids as
+  the storage index (`core/world`). It counts only in its world, pauses when the player leaves, and the history keeps
+  sessions of all worlds with their world name. `resource-sessions.json` schema 2 stores `open` by world id; the one
+  open session of schema 1 has no known world and is ended into the history.
+- **The crafting list shows every craftable item.** It was cut off at 200. Without a search it is grouped and ordered
+  like the creative inventory, for players who do not know what to search for. The creative tab contents are built
+  with the same parameters the creative inventory uses, and its search index is refreshed the same way, so vanilla
+  behaves as if the creative inventory had built them.

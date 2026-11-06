@@ -3,7 +3,7 @@
 Client-side utility suite for Minecraft Java Edition (Fabric). Minekit runs only on your own client.
 Servers and other players need nothing installed.
 
-> **Status (0.6.0):** Phases 1 to 5 are implemented and tested in the real game client: dashboard, settings, Quick
+> **Status (0.6.1):** Phases 1 to 5 are implemented and tested in the real game client: dashboard, settings, Quick
 > Actions (pinned, numbered, hidden, recent), notifications, inventory sorting with preview and hotbar layout (also on
 > a dedicated server), the Crafting Assistant, the Resource Tracker, the Storage Finder, Smart Deposit and the
 > Loadout Manager. Manual checks in the Modrinth instance are still open. Building tools follow in a later phase. See [docs/PROGRESS.md](docs/PROGRESS.md) and [PROJECT_PLAN.md](PROJECT_PLAN.md).
@@ -58,7 +58,9 @@ available in creative or spectator mode, while riding or while a chest or other 
 ### Planning a craft (Crafting Assistant)
 
 Open it from the dashboard (*Crafting*) or Quick Actions → *Open Crafting Assistant*. Search an item on the left,
-set the quantity at the top right. The plan shows:
+or browse: without a search, the list shows every craftable item, grouped and ordered like the creative inventory
+(Building Blocks, Redstone Blocks, Tools & Utilities, ...); the arrows above the list show one category at a time.
+Set the quantity at the top right. The plan shows:
 
 - **Materials to gather.** For each one you see how much you need in total and how much is still missing after
   counting your inventory. Switch off *Use what is in my inventory* to see the full amounts.
@@ -81,8 +83,10 @@ example iron blocks, Minekit plans to use them.
 
 ### Tracking resources (Resource Tracker)
 
-Start a session from the dashboard (*Resources*) or Quick Actions → *Start or stop resource session*. While it runs,
-Minekit compares the item totals in your inventory twice a second:
+Start a session from the dashboard (*Resources*) or Quick Actions → *Start or stop resource session*. A session
+belongs to the world or server you start it in: it only counts there, it pauses when you leave, and every world has
+its own (the dashboard mentions sessions paused in other worlds). While it runs, Minekit compares the item totals
+in your inventory twice a second:
 
 - **Collected:** items gained while no screen is open (mining, picking up, receiving).
 - **Used or given away:** items lost while no screen is open (placing, eating, throwing).
@@ -279,7 +283,7 @@ to `run/` (ignored by git). To join a server straight away:
 A successful start logs:
 
 ```text
-[Minekit] Minekit 0.5.1 initialized (client-only) on Minecraft 26.3 with Fabric Loader 0.20.1
+[Minekit] Minekit 0.6.1 initialized (client-only) on Minecraft 26.3 with Fabric Loader 0.20.1
 ```
 
 On the first start of a fresh `run/` folder Minecraft shows the accessibility onboarding screen, and the
@@ -325,6 +329,21 @@ The Modrinth App is only the launcher. Gradle builds the JAR.
    mod twice, and copies the new one. It does not touch any other file.
 5. **Start the instance** in the Modrinth App. Check the log (instance, *Logs*, or `logs/latest.log` in the
    instance folder) for the `Minekit ... initialized (client-only)` line.
+
+## Share Minekit with a friend
+
+Your friend needs the Modrinth App and nothing on any server. The easiest way is a modpack file:
+
+1. In the Modrinth App, open your Minekit instance, then the instance menu (⋮) → **Export modpack**. Keep Minekit
+   (under `mods`) selected and export. You get a `.mrpack` file. It contains the Minekit JAR and only a reference to
+   Fabric API, which the Modrinth App downloads from Modrinth.
+2. Send the `.mrpack` file. Your friend chooses **Create instance** → **Import from file** (or drops the file onto
+   the app). The instance has Minecraft 26.3, Fabric Loader, Fabric API and Minekit, ready to play.
+
+Without a modpack: send `build/libs/minekit-<version>.jar`. Your friend creates a Fabric 26.3 instance, installs
+**Fabric API** through *Add content*, and drops the JAR into the instance (*Add content* → *Add from file*, or into
+the `mods` folder). For later updates, a new JAR replaces the old one in the same instance; settings stay in
+`config/minekit/`.
 
 ## Client-only guarantees
 

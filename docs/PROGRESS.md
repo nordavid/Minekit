@@ -334,3 +334,25 @@ Architecture: [ADR 0007](adr/0007-loadouts-and-quick-action-configuration.md).
 - **Armor from a chest** cannot be equipped in the chest screen; apply the loadout in the inventory afterwards.
 - **Stackable items in armor positions** (carved pumpkin) are reported as missing.
 - **Quick Actions close an open container**, so container features stay on the buttons next to the container (⇩, ⚒).
+
+## Phase 5.1: Fixes after the second manual test (done, 2026-11-06, version 0.6.1)
+
+The project owner tested 0.6.0. From this version on, the project uses git: `main` holds verified versions (tags
+`v0.6.0`, `v0.6.1`), each round of work happens on a branch with one commit per change.
+
+- [x] Name written as **Minekit** instead of MINEKIT (UI, mod metadata, logs, docs)
+- [x] Inventory page: "Reset hotbar layout" instead of "Leave the whole hotbar as is", with a tooltip
+- [x] Crafting Assistant: every craftable item is listed (it stopped at 200, "854 more"); without a search the list is
+  grouped like the creative inventory, and arrows above it show one category; the hint before an item is chosen is
+  centered and mentions browsing
+- [x] Resource sessions belong to the world they were started in (they were global)
+- [x] Mod icon (`assets/minekit/icon.png`, drawn by `tools/make_icon.py`), current description in `fabric.mod.json`
+- [x] README: how to share Minekit with a friend (Modrinth modpack export, or the JAR plus Fabric API)
+- [ ] Manual check in the Modrinth instance (0.6.1)
+
+### Verification log (2026-11-06)
+
+| Check | Result |
+|---|---|
+| Unit tests | 149 of 149 passed. New: sessions of two worlds are independent (only the world's own session counts, pausing all, ending one keeps the other); schema 1 migration ends the old global session into the history. |
+| Gametests | All six classes pass. The crafting test checks that every craftable item is listed (no cut-off) and that the creative categories are offered; the phase 5 test checks on the dedicated server that the singleplayer world's session is neither shown nor running there. |
