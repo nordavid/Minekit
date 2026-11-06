@@ -6,14 +6,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Owns the lifecycle and enabled state of all feature modules.
  *
- * <p>A module that throws is marked {@link ModuleState#FAILED} and stays inactive for the session; the other modules
- * and the game keep running. Not thread-safe; used from the client thread only.
+ * <p>A module that throws, while starting or in a callback run through {@link ModuleContext#guard}, is marked
+ * {@link ModuleState#FAILED} and stays inactive for the session; the other modules and the game keep running. Not
+ * thread-safe; used from the client thread only.
  */
 public final class ModuleManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger("Minekit");
@@ -39,9 +42,16 @@ public final class ModuleManager {
 	private final Settings settings;
 	private final Map<String, Slot> slots = new LinkedHashMap<>();
 	private boolean initialized;
+	private Consumer<ModuleStatus> failureListener = status -> {
+	};
 
 	public ModuleManager(Settings settings) {
 		this.settings = Objects.requireNonNull(settings, "settings");
+	}
+
+	/** Told when a module fails in a callback while the game runs, for example to show a notification. */
+	public void onFailure(Consumer<ModuleStatus> listener) {
+		failureListener = Objects.requireNonNull(listener, "listener");
 	}
 
 	public void register(MinekitModule module) {
@@ -53,7 +63,7 @@ public final class ModuleManager {
 		if (slots.containsKey(metadata.id())) {
 			throw new IllegalArgumentException("Duplicate module id: " + metadata.id());
 		}
-		slots.put(metadata.id(), new Slot(module, metadata));
+		slots.put(metadata.id(), new Slot(this, module, metadata));
 	}
 
 	/** Initializes every module once and enables those that are enabled in the settings (or by default). */
@@ -146,9 +156,27 @@ public final class ModuleManager {
 	}
 
 	private void markFailed(Slot slot, String phase, Throwable error) {
-		LOGGER.error("Minekit module '{}' failed to {} and is inactive until the next start", slot.metadata.id(), phase, error);
+		LOGGER.error("Minekit module '{}' failed in {} and is inactive until the next start", slot.metadata.id(), phase, error);
 		slot.state = ModuleState.FAILED;
 		slot.failure = error.getClass().getSimpleName() + (error.getMessage() == null ? "" : ": " + error.getMessage());
+	}
+
+	/** A callback threw: the module stops for the session, its cleanup runs, and the listener is told. */
+	private void callbackFailed(Slot slot, String what, Throwable error) {
+		boolean wasEnabled = slot.state == ModuleState.ENABLED;
+		markFailed(slot, what, error);
+		if (wasEnabled) {
+			try {
+				slot.module.onDisable();
+			} catch (RuntimeException | LinkageError e) {
+				LOGGER.error("Minekit module '{}' threw while being stopped after an error", slot.metadata.id(), e);
+			}
+		}
+		try {
+			failureListener.accept(slot.status());
+		} catch (RuntimeException e) {
+			LOGGER.error("Could not report the failure of module '{}'", slot.metadata.id(), e);
+		}
 	}
 
 	private Slot require(String moduleId) {
@@ -160,14 +188,41 @@ public final class ModuleManager {
 	}
 
 	private static final class Slot implements ModuleContext {
+		private final ModuleManager manager;
 		private final MinekitModule module;
 		private final ModuleMetadata metadata;
 		private ModuleState state = ModuleState.REGISTERED;
 		private String failure;
 
-		private Slot(MinekitModule module, ModuleMetadata metadata) {
+		private Slot(ModuleManager manager, MinekitModule module, ModuleMetadata metadata) {
+			this.manager = manager;
 			this.module = module;
 			this.metadata = metadata;
+		}
+
+		@Override
+		public void guard(String what, Runnable work) {
+			if (state == ModuleState.FAILED) {
+				return;
+			}
+			try {
+				work.run();
+			} catch (RuntimeException | LinkageError e) {
+				manager.callbackFailed(this, what, e);
+			}
+		}
+
+		@Override
+		public boolean guard(String what, BooleanSupplier work, boolean fallback) {
+			if (state == ModuleState.FAILED) {
+				return fallback;
+			}
+			try {
+				return work.getAsBoolean();
+			} catch (RuntimeException | LinkageError e) {
+				manager.callbackFailed(this, what, e);
+				return fallback;
+			}
 		}
 
 		@Override

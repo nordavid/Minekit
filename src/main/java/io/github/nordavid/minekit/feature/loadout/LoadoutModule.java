@@ -61,6 +61,11 @@ public final class LoadoutModule implements MinekitModule {
 	private final DashboardPages dashboardPages;
 	private final ItemCategorizer categorizer = new ItemCategorizer();
 	private ModuleContext context;
+
+	/** The module's context, so its panels run their callbacks guarded. */
+	ModuleContext context() {
+		return context;
+	}
 	private KeyMapping key;
 	private @Nullable LoadoutOverlay overlay;
 	private @Nullable String lastUsed;
@@ -98,7 +103,7 @@ public final class LoadoutModule implements MinekitModule {
 		quickActions.registerProvider(this::loadoutActions);
 		dashboardPages.register(new LoadoutDashboardPage(this));
 		tracker.onConfirmed(container -> attach(Minecraft.getInstance().gui.screen()));
-		ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> attach(screen));
+		ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> context.guard("screen", () -> attach(screen)));
 	}
 
 	@Override
@@ -363,7 +368,7 @@ public final class LoadoutModule implements MinekitModule {
 		}
 		LoadoutOverlay current = overlay;
 		current.install();
-		ScreenKeyboardEvents.allowKeyPress(screen).register((target, event) -> !onKey(current, event));
+		ScreenKeyboardEvents.allowKeyPress(screen).register((target, event) -> context.guard("key", () -> !onKey(current, event), true));
 	}
 
 	/** Returns true if the key press was handled and must not reach the container screen. */

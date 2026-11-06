@@ -179,4 +179,44 @@ class ModuleManagerTest {
 		assertEquals(List.of("b_module", "a_module"),
 				manager.modules().stream().map(status -> status.metadata().id()).toList());
 	}
+
+	@Test
+	void aCallbackThatThrowsStopsOnlyItsModule() {
+		TestModule broken = new TestModule("broken", true);
+		TestModule healthy = new TestModule("healthy", true);
+		manager.register(broken);
+		manager.register(healthy);
+		List<String> reported = new ArrayList<>();
+		manager.onFailure(status -> reported.add(status.metadata().id() + " " + status.failure().orElse("")));
+		manager.initializeAll();
+
+		int[] runs = {0};
+		broken.context.guard("tick", () -> runs[0]++);
+		broken.context.guard("tick", () -> {
+			throw new IllegalStateException("bad tick");
+		});
+		assertEquals(ModuleState.FAILED, manager.status("broken").orElseThrow().state());
+		assertEquals(List.of("initialize", "enable", "disable"), broken.calls, "its cleanup runs once");
+		assertEquals(List.of("broken IllegalStateException: bad tick"), reported);
+
+		broken.context.guard("tick", () -> runs[0]++);
+		assertEquals(1, runs[0], "callbacks of a failed module are skipped");
+		assertFalse(broken.context.guard("key", () -> true, false), "a question gets the fallback");
+		assertEquals(ModuleState.FAILED, manager.setEnabled("broken", true), "it cannot be enabled again this session");
+
+		assertTrue(healthy.context.guard("key", () -> true, false));
+		assertTrue(healthy.context.isEnabled(), "the other module keeps running");
+	}
+
+	@Test
+	void aQuestionThatThrowsAnswersTheFallback() {
+		TestModule module = new TestModule("module", true);
+		manager.register(module);
+		manager.initializeAll();
+
+		assertTrue(module.context.guard("key", () -> {
+			throw new IllegalArgumentException("bad key");
+		}, true));
+		assertEquals(ModuleState.FAILED, manager.status("module").orElseThrow().state());
+	}
 }

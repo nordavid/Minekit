@@ -105,8 +105,8 @@ public final class LoadoutOverlay implements ContainerPanels.Panel {
 		widgets.clear();
 		module.panels().register(this);
 		layout();
-		ScreenEvents.afterExtract(screen).register((current, graphics, mouseX, mouseY, tickDelta) -> extractHighlights(graphics));
-		ScreenEvents.afterTick(screen).register(current -> tick());
+		ScreenEvents.afterExtract(screen).register((current, graphics, mouseX, mouseY, tickDelta) -> module.context().guard("draw", () -> extractHighlights(graphics)));
+		ScreenEvents.afterTick(screen).register(current -> module.context().guard("tick", this::tick));
 		ScreenMouseEvents.allowMouseRelease(screen).register((current, event) -> {
 			if (!covers(event.x(), event.y())) {
 				return true;

@@ -71,7 +71,7 @@ public final class SmartInventoryModule implements MinekitModule {
 		sortKey = keybinds.register("sort_inventory", InputConstants.KEY_R, this::onSortKeyInGame);
 		ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
 			if (screen instanceof InventoryScreen) {
-				ScreenKeyboardEvents.allowKeyPress(screen).register((current, event) -> !onKeyInInventory(current, event));
+				ScreenKeyboardEvents.allowKeyPress(screen).register((current, event) -> context.guard("key", () -> !onKeyInInventory(current, event), true));
 			}
 		});
 		quickActions.register(new QuickAction("sort_inventory", Component.translatable("minekit.action.sort_inventory"),

@@ -31,6 +31,8 @@ import net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.ChestType;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Knows which container block the open container screen belongs to.
@@ -50,6 +52,7 @@ import org.jspecify.annotations.Nullable;
  * <p>Always active; cheap. Client thread only.
  */
 public final class ContainerTracker {
+	private static final Logger LOGGER = LoggerFactory.getLogger("Minekit");
 	/** How long after the right-click the screen may open: generous, for slow servers. */
 	static final int OPEN_WINDOW_TICKS = 60;
 	/** How long a candidate may wait for the block to visibly open. */
@@ -106,6 +109,17 @@ public final class ContainerTracker {
 		closeListeners.add(listener);
 	}
 
+	/** Tells every listener; one that throws is logged and does not stop the others or the game. */
+	private static void notifyAll(List<Consumer<OpenedContainer>> listeners, OpenedContainer container) {
+		for (Consumer<OpenedContainer> listener : listeners) {
+			try {
+				listener.accept(container);
+			} catch (RuntimeException e) {
+				LOGGER.error("A container listener failed for {}", container.kind(), e);
+			}
+		}
+	}
+
 	private void tick(Minecraft client) {
 		ticks++;
 		Candidate waiting = candidate;
@@ -117,7 +131,7 @@ public final class ContainerTracker {
 			} else if (isVisiblyOpen(client.level, waiting.container().kind(), waiting.clicked())) {
 				candidate = null;
 				current = waiting.container();
-				confirmListeners.forEach(listener -> listener.accept(waiting.container()));
+				notifyAll(confirmListeners, waiting.container());
 			}
 		}
 		if (current != null && (client.player == null || client.player.containerMenu != current.menu())) {
@@ -170,7 +184,7 @@ public final class ContainerTracker {
 		OpenedContainer closed = current;
 		current = null;
 		if (closed != null) {
-			closeListeners.forEach(listener -> listener.accept(closed));
+			notifyAll(closeListeners, closed);
 		}
 	}
 

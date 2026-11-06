@@ -150,9 +150,21 @@ public final class MinekitClient implements ClientModInitializer {
 		modules.initializeAll();
 		pages.register(new SettingsPage(runtime));
 
+		modules.onFailure(status -> notifications.error(Component.translatable("minekit.module.stopped", Component.translatable(
+				status.metadata().nameKey()))));
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			keybinds.tick();
-			executor.tick(client);
+			try {
+				executor.tick(client);
+			} catch (RuntimeException e) {
+				// A failure in the middle of a job must not crash the game: stop the job and keep everything as it is.
+				LOGGER.error("The click executor failed", e);
+				try {
+					executor.cancel(Component.translatable("minekit.executor.failed"));
+				} catch (RuntimeException again) {
+					LOGGER.error("The click executor could not be stopped cleanly", again);
+				}
+			}
 		});
 		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "hud"), hud::extractHud);
 		ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) ->
