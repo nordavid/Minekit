@@ -36,7 +36,7 @@ import org.jspecify.annotations.Nullable;
 public final class ResolvedBlueprint {
 	private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger("Minekit");
 	/** Properties that decide how a block is turned or which part it is; the rest (water, power, ...) is ignored. */
-	private static final Set<String> ORIENTATION = Set.of("facing", "axis", "half", "type", "rotation", "face", "orientation",
+	static final Set<String> ORIENTATION = Set.of("facing", "axis", "half", "type", "rotation", "face", "orientation",
 			"vertical_direction", "part", "hinge");
 
 	private final String file;

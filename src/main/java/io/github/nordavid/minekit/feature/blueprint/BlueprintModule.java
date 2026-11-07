@@ -25,7 +25,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
+import io.github.nordavid.minekit.core.screen.widget.MinekitTheme;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
@@ -86,6 +94,8 @@ public final class BlueprintModule implements MinekitModule {
 	private @Nullable Placement progressPlacement;
 	private @Nullable String progressWorld;
 	private @Nullable BlockPos nextBlock;
+	/** The blueprint block in the crosshair that still has to be placed (or is wrong), if any. */
+	private @Nullable BlockPos lookTarget;
 	private @Nullable BlockPos measureA;
 	private @Nullable BlockPos measureB;
 	private long ticks;
@@ -141,6 +151,11 @@ public final class BlueprintModule implements MinekitModule {
 				ghost.submit(render);
 			}
 		}));
+		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("minekit", "blueprint_target"), (graphics, delta) -> context.guard("hud", () -> {
+			if (isEnabled()) {
+				extractTarget(graphics);
+			}
+		}));
 	}
 
 	@Override
@@ -187,6 +202,10 @@ public final class BlueprintModule implements MinekitModule {
 	/** Progress of the active blueprint in this world, if it is placed here. */
 	public Optional<BlueprintProgress> progress() {
 		return Optional.ofNullable(progress);
+	}
+
+	public Optional<BlockPos> lookTarget() {
+		return Optional.ofNullable(lookTarget);
 	}
 
 	public Optional<BlockPos> nextBlock() {
@@ -524,6 +543,7 @@ public final class BlueprintModule implements MinekitModule {
 		if (ticks % 10 == 0) {
 			nextBlock = findNextBlock(resolved, progress, placement, player.blockPosition());
 		}
+		lookTarget = settings.current().show() ? findLookTarget(resolved, progress, placement, level, player) : null;
 		if (settings.current().show()) {
 			drawBlueprint(resolved, progress, placement, level, player.blockPosition(), range);
 		} else {
@@ -531,7 +551,44 @@ public final class BlueprintModule implements MinekitModule {
 		}
 	}
 
-	/** The nearest missing or wrong block of the lowest layer that is not finished. */
+	/**
+	 * The first blueprint block in the crosshair, within reach, that is missing or wrong: what the player is about to
+	 * build on. The positions the player stands in are passed through, and a real block that belongs there or is not part
+	 * of the blueprint ends the search.
+	 */
+	private static @Nullable BlockPos findLookTarget(ResolvedBlueprint resolved, BlueprintProgress progress, Placement placement, ClientLevel level,
+			LocalPlayer player) {
+		Blueprint blueprint = resolved.blueprint();
+		net.minecraft.world.phys.Vec3 eye = player.getEyePosition();
+		net.minecraft.world.phys.Vec3 look = player.getViewVector(1.0f);
+		BlockPos feet = player.blockPosition();
+		BlockPos head = BlockPos.containing(eye);
+		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+		BlockPos[] found = new BlockPos[1];
+		VoxelRay.walk(eye.x, eye.y, eye.z, look.x, look.y, look.z, player.blockInteractionRange() + 1, (x, y, z) -> {
+			pos.set(x, y, z);
+			if (pos.equals(feet) || pos.equals(head)) {
+				return false;
+			}
+			int[] local = placement.toLocal(blueprint, x, y, z);
+			if (local != null) {
+				int index = blueprint.index(local[0], local[1], local[2]);
+				if (progress.isTracked(index)) {
+					Status status = progress.status(index);
+					if (status == Status.CORRECT) {
+						return true;
+					}
+					found[0] = pos.immutable();
+					return true;
+				}
+			}
+			var state = level.getBlockState(pos);
+			return !state.isAir() && !state.canBeReplaced();
+		});
+		return found[0];
+	}
+
+	/** The nearest missing or wrong block of the lowest layer that is not finished, not where the player stands. */
 	private static @Nullable BlockPos findNextBlock(ResolvedBlueprint resolved, BlueprintProgress progress, Placement placement, BlockPos player) {
 		int layer = progress.lowestOpenLayer();
 		if (layer < 0) {
@@ -545,6 +602,10 @@ public final class BlueprintModule implements MinekitModule {
 			Status status = progress.status(index);
 			if (status == Status.MISSING || status == Status.WRONG) {
 				BlockPos pos = resolved.worldPos(index, placement);
+				// One cannot place a block where one stands: those positions would mark the player instead of the work.
+				if (pos.equals(player) || pos.equals(player.above())) {
+					continue;
+				}
 				double distance = pos.distSqr(player);
 				if (distance < bestDistance) {
 					bestDistance = distance;
@@ -609,7 +670,10 @@ public final class BlueprintModule implements MinekitModule {
 				}
 			}
 		}
-		if (nextBlock != null) {
+		if (lookTarget != null) {
+			// The block in the crosshair: its name is shown below the crosshair, so no label over it.
+			Gizmos.cuboid(lookTarget, 0.03f, GizmoStyle.strokeAndFill(COLOR_NEXT, 2.5f, 0x30E8B75A));
+		} else if (nextBlock != null) {
 			Gizmos.cuboid(nextBlock, 0.04f, GizmoStyle.strokeAndFill(COLOR_NEXT, 2.5f, 0x40E8B75A));
 			int[] local = placement.toLocal(blueprint, nextBlock.getX(), nextBlock.getY(), nextBlock.getZ());
 			if (local != null) {
@@ -618,6 +682,61 @@ public final class BlueprintModule implements MinekitModule {
 				String name = state == null ? blueprint.palette().get(palette).id() : state.getBlock().getName().getString();
 				Gizmos.billboardTextOverBlock(name, nextBlock, 0, COLOR_NEXT, 0.6f);
 			}
+		}
+	}
+
+	/**
+	 * Below the crosshair: the block the blueprint wants where the player looks, with its icon and orientation; for a
+	 * wrong block also what is there now.
+	 */
+	private void extractTarget(GuiGraphicsExtractor graphics) {
+		Minecraft minecraft = Minecraft.getInstance();
+		BlockPos target = lookTarget;
+		ResolvedBlueprint resolved = active;
+		Placement placement = placement().orElse(null);
+		if (target == null || resolved == null || placement == null || minecraft.gui.screen() != null || minecraft.gui.hud.isHidden()
+				|| minecraft.level == null) {
+			return;
+		}
+		Blueprint blueprint = resolved.blueprint();
+		int[] local = placement.toLocal(blueprint, target.getX(), target.getY(), target.getZ());
+		if (local == null) {
+			return;
+		}
+		int palette = blueprint.paletteIndex(local[0], local[1], local[2]);
+		BlockState wanted = resolved.expected(palette, placement);
+		Component name = wanted == null ? Component.literal(blueprint.palette().get(palette).id()) : wanted.getBlock().getName();
+		List<String> details = new java.util.ArrayList<>();
+		if (wanted != null) {
+			for (var property : wanted.getProperties()) {
+				if (ResolvedBlueprint.ORIENTATION.contains(property.getName())) {
+					details.add(property.getName() + ": " + wanted.getValue(property));
+				}
+			}
+		}
+		Optional<BlueprintProgress> current = progress();
+		if (current.isPresent() && current.get().status(blueprint.index(local[0], local[1], local[2])) == Status.WRONG) {
+			details.add(Component.translatable("minekit.blueprint.target_now", minecraft.level.getBlockState(target).getBlock().getName()).getString());
+		}
+		Font font = minecraft.font;
+		String detail = String.join(" · ", details);
+		int textWidth = Math.max(font.width(name), font.width(detail));
+		int width = 16 + 6 + textWidth + 8;
+		int height = detail.isEmpty() ? 20 : 24;
+		int x = graphics.guiWidth() / 2 - width / 2;
+		int y = graphics.guiHeight() / 2 + 12;
+		graphics.fill(x, y, x + width, y + height, 0xC0171A1F);
+		graphics.fill(x, y, x + 2, y + height, COLOR_NEXT);
+		Item item = resolved.item(palette);
+		if (item != net.minecraft.world.item.Items.AIR) {
+			graphics.item(new ItemStack(item), x + 5, y + (height - 16) / 2);
+		}
+		int textX = x + 5 + 16 + 5;
+		if (detail.isEmpty()) {
+			graphics.text(font, name, textX, y + 6, MinekitTheme.TEXT, false);
+		} else {
+			graphics.text(font, name, textX, y + 3, MinekitTheme.TEXT, false);
+			graphics.text(font, detail, textX, y + 13, MinekitTheme.TEXT_MUTED, false);
 		}
 	}
 
