@@ -3,8 +3,13 @@
 All notable changes to Minekit. Versions follow [semantic versioning](https://semver.org/); before 1.0.0, a minor
 version may change behavior.
 
-## Unreleased
+## 0.9.0 (2026-11-07)
 
+- Blueprints look like the blocks they are: the 3D view and the plan use the game's textures (also those of resource
+  packs) and block shapes, tinted like in the game (grass, leaves, redstone); in the world the blocks still to place
+  show the colors of their sides and their shape.
+- The Overview warns that old `.schematic` files cannot hold newer blocks; converted files often lack them.
+- With Mod Menu installed, Minekit's settings button opens the dashboard.
 - Tested together with Sodium, Iris and Mod Menu: everything works as without them.
 - The user guide lists the known limitations in one place.
 - `-Pminekit.extraMods=<folder>` adds other mods to the development runs for compatibility tests.

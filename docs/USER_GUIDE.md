@@ -174,8 +174,8 @@ places a block; you build.
    the window, or put it into the blueprint folder (*Open folder*). Minekit copies dropped files; the original stays
    untouched. Choose a blueprint on the left. If a file cannot be read, the screen says why.
 2. *Place in front of me*. Move it block by block (Shift: ten), turn it, mirror it, or move it to where you stand.
-3. Build. The whole structure stands in the world: every block still to place is shown see-through in its own
-   color, wrong blocks are red, and blocks you placed correctly simply look like themselves. The next block (the
+3. Build. The whole structure stands in the world: every block still to place is shown see-through in the colors of
+   its texture and in its shape (a slab half high), wrong blocks are red, and blocks you placed correctly simply look like themselves. The next block (the
    nearest open one in the lowest unfinished layer) is amber, with its name. Switch off *Whole structure in the world*
    (or use Quick Actions → *Blueprint: whole structure or only around me*) to see only the missing (teal) and wrong
    blocks within ten blocks of you. Limiting the layers being built (*Layers* tab) also cuts the structure open in the
@@ -184,9 +184,10 @@ places a block; you build.
 The screen has three tabs:
 
 - **Overview**: where the blueprint stands, how much is built, the next block, measuring.
-- **Layers**: **3D** shows the whole structure at an angle; scroll over it (or use ▼ ▲) to cut away layers from the
-  top and look inside, and turn it with ↻. **Plan** shows one layer from above, like a building plan. Both are colored
-  by what is correct, missing or wrong once the blueprint is placed, and show the block under the mouse. The buttons
+- **Layers**: **3D** shows the whole structure at an angle with the game's textures and block shapes (a repeater
+  flat, a slab half high); scroll over it (or use ▼ ▲) to cut away layers from the top and look inside, and turn it
+  with *Turn*. **Plan** shows one layer from above, like a building plan, also with textures. Both are tinted by what
+  is correct, missing or wrong once the blueprint is placed, and show the block under the mouse. The buttons
   below the arrows limit building to some layers.
 - **Materials**: what is still to place, what you carry and what your storage holds; turns what is missing into
   resource goals.
@@ -263,11 +264,15 @@ only.
 
 - Compared are the block and its orientation; not other properties (waterlogged, powered, connections), not what a
   block holds (chest contents, sign text), and not entities.
-- The views use map colors, not textures; blocks smaller than a cube are drawn as cubes.
+- The screen's views use the game's textures, but each block as a single box: stairs look like full blocks, a fence
+  like its post and arms in one box. In the world the blocks are shown in the average colors of their sides, not with
+  textures.
 - In the world, a very large structure shows its nearest 12 000 faces. The 3D view does not draw structures larger
   than about 700 x 700 blocks across; the plan still works.
 - Minecraft has no file dialog: drop files onto the blueprint screen or put them into the blueprint folder.
-- Modded blocks in old `.schematic` files stay unknown.
+- Old `.schematic` files cannot hold blocks added after Minecraft 1.12, and files converted to it by download sites
+  often lack such blocks (pistons, slime, redstone). The Overview says so; use a `.litematic` or `.schem` if there is
+  one. Modded blocks in old `.schematic` files stay unknown.
 
 ## Share Minekit with a friend
 

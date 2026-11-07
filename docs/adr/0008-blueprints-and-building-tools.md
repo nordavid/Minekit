@@ -135,3 +135,35 @@ The 0.7.1 addendum rejected a ghost of every block in the world as too expensive
    drew 11 994 faces in 0.6 ms per tick. Rendering a vertex buffer through Fabric's level render events would scale
    further, but needs the fast-changing 26.x render APIs; gizmos were enough for the measured sizes.
 4. **The plan is centered** in its box like the 3D view.
+
+## Addendum (2026-11-07, version 0.9.0)
+
+A manual test compared a TNT launcher from a download site in two formats with the site's own picture.
+
+1. **The `.schematic` from the site is incomplete, not misread.** It holds only cobblestone (block id 4); every
+   other position is air. The site's conversion to the 1.12 format dropped the sticky pistons, slime blocks, the
+   dispenser and the redstone. Minekit reads what is there, and the Overview of an MCEdit file now says that the
+   format cannot hold newer blocks and that a `.litematic` or `.schem` is better if there is one.
+2. **Map colors were not enough.** The `.litematic` was complete (26 blocks), but cobblestone, pistons and the
+   dispenser share the map color "stone", and repeaters, buttons and redstone have none. The views now use how the
+   game itself draws the blocks: `BlockLooks` takes, for each side, the first quad of the block's model (or the
+   largest one facing that way), reads the sprite's PNG through the resource manager (so resource packs apply; the
+   first frame of animated textures), scales it to 16 x 16 and tints it with the block's tint source (grass, leaves,
+   redstone power). The block's box comes from its shape (a slab half high, a repeater 2/16, redstone a thin plate
+   when the shape is empty). Blocks the game draws in other ways (chests, signs, beds) use their particle texture.
+   Results are cached until the models reload.
+3. **The painter draws boxes with textures.** `IsometricView` rasterizes each block's box face by face, maps every
+   pixel back to the face to pick its texel (texture coordinates from the position in the block, like vanilla's
+   default UVs, so a slab's side shows the lower half), skips transparent texels (glass, redstone), shades per side,
+   lays the build status over it, and still keeps the cell under each pixel for the tooltip. Blocks smaller than 8
+   pixels show their average colors instead. The top texture is turned with the view. The plan uses the top textures
+   at 16 pixels per block up to 64 blocks across.
+4. **In the world**, gizmos only draw colored rectangles, so the ghost uses the average color of each side and the
+   block's box; it is more opaque than before (alpha 0x90) so the colors read against the sky.
+5. Rejected: rendering the block models through the GPU in the screen (fast-moving 26.x rendering APIs, many models
+   per frame, and no picking), and reading sprite pixels from the texture atlas (`SpriteContents` keeps them private).
+
+Mod Menu's settings button opens the dashboard (`compat/ModMenuIntegration`, a `modmenu` entrypoint that only Mod
+Menu calls). Mod Menu 21.0.0 (MIT, maintained by TerraformersMC) is a compile-only dependency from its Maven
+repository; it is not in the JAR and not required to run Minekit. `ClientOnlyMetadataTest` now allows exactly the
+`client` and `modmenu` entrypoints.

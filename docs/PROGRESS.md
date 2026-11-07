@@ -508,3 +508,26 @@ added to the test run with `-Pminekit.extraMods=<folder>`: Sodium 0.9.3-beta.1+m
 | Log | No Minekit errors or warnings beyond the one the sorting test provokes on purpose (an item arriving mid-sort); the other warnings are Iris refmaps in a development environment and Sodium driver workarounds. |
 | Rendering with Sodium and Iris | The whole-structure view, the guide, the 3D view and all panels look the same as without them (screenshots compared). 12 000 ghost faces drawn in 0.8 ms per tick. |
 | Mod Menu | New `CompatibilityGameTest` (runs only when Mod Menu is loaded): Minekit is listed with icon, version 0.8.1, author, description and the Website and Issues buttons from `fabric.mod.json`; it has no settings button there (the dashboard is on `K`). |
+
+## 0.9.0: Recognizable blocks and the Mod Menu button (done, 2026-11-07)
+
+Found in the manual test of 0.8.x with a TNT launcher from a download site. Details:
+[ADR 0008, third addendum](adr/0008-blueprints-and-building-tools.md#addendum-2026-11-07-version-090).
+
+- [x] The site's `.schematic` export holds only cobblestone: the file is incomplete, Minekit reads it right; the
+  Overview now warns about the old format
+- [x] 3D view and plan with the game's textures and block shapes, tinted like in the game; average colors on small
+  blocks
+- [x] World view in the colors of each side and in the block's shape, more opaque
+- [x] Mod Menu settings button opens the dashboard
+- [ ] Manual check of 0.9.0 in the Modrinth instance
+
+### Verification log (2026-11-07)
+
+| Check | Result |
+|---|---|
+| The user's files | The TNT launcher `.schematic` holds 18 cobblestone blocks and nothing else (block ids dumped); the `.litematic` has 26 blocks: cobblestone, sticky pistons, slime blocks, a dispenser, repeaters, a stone button and redstone. |
+| Unit tests | All passed. `IsometricViewTest` 9 (new: a slab is half as high, textures on large blocks and the average on small ones, transparent texels leave pixels empty, the status overlay). |
+| Gametest: textured views | A showcase blueprint with cobblestone, a sticky piston, slime, a dispenser, a repeater, redstone, a button, glass, an oak slab, grass and leaves. In the real client cobblestone has six 16 x 16 sides and is solid, the slab's box is 8/16 high, the repeater's 2/16, glass is not solid, and the grass top is tinted green. Screenshots: the 3D view shows the textures (glass frame, slime, dispenser opening, grass, leaves), the plan the cobblestone texture, the world the colored ghost. |
+| Gametest: Mod Menu (compatibility run) | Minekit's entry has the settings button; it opens the dashboard, and Escape returns to Mod Menu. Without Mod Menu everything runs as before; the JAR contains only `ModMenuIntegration`, no Mod Menu classes. |
+| All gametests | All eight gametest classes pass, with and without Sodium, Iris and Mod Menu. |
