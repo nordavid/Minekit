@@ -483,7 +483,7 @@ release JAR, clear installation instructions and a tested feature set.
   (long item names in the narrow deposit list, the last help paragraph on the smallest screens)
 - [x] Performance: time per module callback measured over the whole gametest run (see below)
 - [x] Keybinds: conflicts with recipe viewers and sorting mods documented (Minekit already lists them on the dashboard)
-- [ ] Compatibility testing with popular mods (Sodium, Iris, Mod Menu): needs downloads, waiting for the owner's OK
+- [x] Compatibility: all gametests pass with Sodium, Iris, Mod Menu and Text Placeholder API loaded (see below)
 - [x] Known limitations collected in one place in the user guide (*Known limitations*), outdated ones dropped
 - [ ] Manual check of 0.8.x in the Modrinth instance
 
@@ -495,3 +495,16 @@ release JAR, clear installation instructions and a tested feature set.
 | UI audit | First run: 45 cut-off texts on 8 screens. After the fixes: 3, all acceptable (see the list above). The deposit gametest found that the growing help panel moved its close button; it now grows downward only. |
 | Module timings (whole gametest run, 1354 ticks) | blueprints 96 us per tick on average, worst 21 ms (first placement of the 40 x 20 x 40 test structure); storage_finder 28 us, worst 2.6 ms; resource_tracker 15 us, worst 6.3 ms; smart_deposit 12 us, worst 6.3 ms; loadouts 9 us. All modules together: about 0.3 % of a 50 ms tick. |
 | All gametests | All seven gametest classes pass. |
+
+### Compatibility run (2026-11-07)
+
+Downloaded from Modrinth with the owner's OK and checked against Modrinth's SHA-512, kept outside the repository, and
+added to the test run with `-Pminekit.extraMods=<folder>`: Sodium 0.9.3-beta.1+mc26.3, Iris 1.11.7+mc26.3, Mod Menu
+21.0.0 and its dependency Text Placeholder API 3.2.0+26.3 (60 mods loaded in total).
+
+| Check | Result |
+|---|---|
+| All gametests | All eight gametest classes pass, in single player and on the dedicated server. |
+| Log | No Minekit errors or warnings beyond the one the sorting test provokes on purpose (an item arriving mid-sort); the other warnings are Iris refmaps in a development environment and Sodium driver workarounds. |
+| Rendering with Sodium and Iris | The whole-structure view, the guide, the 3D view and all panels look the same as without them (screenshots compared). 12 000 ghost faces drawn in 0.8 ms per tick. |
+| Mod Menu | New `CompatibilityGameTest` (runs only when Mod Menu is loaded): Minekit is listed with icon, version 0.8.1, author, description and the Website and Issues buttons from `fabric.mod.json`; it has no settings button there (the dashboard is on `K`). |

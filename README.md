@@ -67,6 +67,9 @@ explains each feature step by step.
 
 Some servers forbid inventory automation or client mods in general. Check the rules of the server you play on.
 
+Minekit is tested together with Sodium, Iris and Mod Menu; it uses no mixins, so it rarely gets in the way of other
+mods. If two mods want the same key, the dashboard's Overview says so.
+
 ## Building from source
 
 Install JDK 25 and run:
