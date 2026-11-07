@@ -218,6 +218,57 @@ Everything is stored in `config/minekit/` inside the game folder (the Modrinth i
 
 If a file is damaged, Minekit keeps a copy (`*.corrupt-<time>`), starts with defaults and tells you so.
 
+## Known limitations
+
+What Minekit cannot do, or does differently than one might expect. Most of it follows from running on the client
+only.
+
+**Everywhere**
+
+- Minekit only knows what the server showed you, and it moves items with normal clicks, about ten per second; a full
+  inventory takes a few seconds.
+- After the last click Minekit waits half a second for a correction from the server. A server that corrects later
+  makes Minekit report success too early; the next preview shows the real inventory.
+- This version runs on Minecraft 26.3 (26.3.x) only. Every Minecraft update needs a new Minekit version.
+
+**Sorting and the hotbar**
+
+- Favorites are marked in the sort preview, not in the vanilla inventory.
+- The "best" tool or weapon is chosen by material, not by enchantments. Mark the enchanted one as a favorite, or use a
+  *this item* rule.
+- Modded items without common tags may be sorted as blocks or miscellaneous.
+
+**Crafting and resources**
+
+- Steps that use a vanilla recipe may differ on servers with custom recipes; they are marked "vanilla default".
+- Fuel for furnaces and leftovers such as empty buckets are not counted.
+- The Resource Tracker cannot tell mining from picking up, or placing from throwing.
+
+**Storage Finder and Smart Deposit**
+
+- Containers you never opened, or that changed since (hoppers, other players), are unknown or outdated until you
+  open them again. Every entry shows how old it is.
+- Enchantments and names are not stored; a shulker box inside a chest counts as one item.
+- Modded containers count only if they open a vanilla container menu.
+- A LAN world joined from another computer gets a new index every time.
+- Smart Deposit keeps the whole hotbar unless *Also empty the hotbar* is on (dashboard, *Deposit*).
+- There is no Quick Action for Smart Deposit, because the palette would close the container; use `G` or the ⇩ button.
+
+**Loadouts**
+
+- Stacks move whole, so a position may get a few more items than saved.
+- Armor cannot be put on in a chest screen; apply the loadout in your inventory afterwards.
+
+**Blueprints**
+
+- Compared are the block and its orientation; not other properties (waterlogged, powered, connections), not what a
+  block holds (chest contents, sign text), and not entities.
+- The views use map colors, not textures; blocks smaller than a cube are drawn as cubes.
+- In the world, a very large structure shows its nearest 12 000 faces. The 3D view does not draw structures larger
+  than about 700 x 700 blocks across; the plan still works.
+- Minecraft has no file dialog: drop files onto the blueprint screen or put them into the blueprint folder.
+- Modded blocks in old `.schematic` files stay unknown.
+
 ## Share Minekit with a friend
 
 Your friend needs the Modrinth App and nothing on any server. The easiest way is a modpack file:

@@ -3,6 +3,12 @@
 All notable changes to Minekit. Versions follow [semantic versioning](https://semver.org/); before 1.0.0, a minor
 version may change behavior.
 
+## Unreleased
+
+- Tested together with Sodium, Iris and Mod Menu: everything works as without them.
+- The user guide lists the known limitations in one place.
+- `-Pminekit.extraMods=<folder>` adds other mods to the development runs for compatibility tests.
+
 ## 0.8.1 (2026-11-07)
 
 Phase 7, first part: robustness and small screens.

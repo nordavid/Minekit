@@ -93,7 +93,16 @@ dedicated test server accepts the Minecraft EULA (`eula = true` in `build.gradle
 `build/run`. Screenshots go to `build/run/clientGameTest/screenshots/`. Every run also writes
 `build/run/clientGameTest/ui-audit.txt`, one line for each text Minekit had to cut off with "…" (screen, width needed,
 width available), and logs how long each module's callbacks took (`[Minekit gametest] timing ...`). The test window
-is 854 x 480 at GUI scale 2, the smallest GUI Minecraft allows, so the audit finds labels that are too long. A failure ends the run with "Client
+is 854 x 480 at GUI scale 2, the smallest GUI Minecraft allows, so the audit finds labels that are too long.
+
+To test together with other mods, put their JARs (and the JARs they depend on) into a folder outside the repository
+and pass it:
+
+```bash
+./gradlew runClientGameTest -Pminekit.extraMods=C:/path/to/compat-mods
+```
+
+The JARs are added to the development runs only; they are never packaged and the normal build does not need them. A failure ends the run with "Client
 gametests failed" in the log and a failed Gradle task.
 
 ## Run in the development client

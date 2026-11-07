@@ -67,6 +67,9 @@ explains each feature step by step.
 
 Some servers forbid inventory automation or client mods in general. Check the rules of the server you play on.
 
+Minekit is tested together with Sodium, Iris and Mod Menu; it uses no mixins, so it rarely gets in the way of other
+mods. If two mods want the same key, the dashboard's Overview says so.
+
 ## Building from source
 
 Install JDK 25 and run:
@@ -80,7 +83,7 @@ development client and the project layout are described in [docs/DEVELOPMENT.md]
 
 ## Documentation
 
-- [User guide](docs/USER_GUIDE.md): every feature, where your data is stored, troubleshooting
+- [User guide](docs/USER_GUIDE.md): every feature, where your data is stored, known limitations, troubleshooting
 - [Development](docs/DEVELOPMENT.md): versions, build, tests, development client, project layout
 - [Architecture decisions](docs/adr/): why things are built the way they are
 - [Progress](docs/PROGRESS.md) and [project plan](PROJECT_PLAN.md)

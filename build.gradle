@@ -39,6 +39,14 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+// Compatibility runs: `gradlew runClientGameTest -Pminekit.extraMods=<folder>` adds every JAR in that folder (for example
+// Sodium or Mod Menu) to the development runs. They are never packaged and never needed to build Minekit.
+if (project.hasProperty('minekit.extraMods')) {
+	dependencies {
+		localRuntime fileTree(dir: project.property('minekit.extraMods'), include: '*.jar')
+	}
+}
+
 processResources {
 	// fabric.mod.json takes its dependency ranges from gradle.properties, so the versions live in one place.
 	def expansions = [
