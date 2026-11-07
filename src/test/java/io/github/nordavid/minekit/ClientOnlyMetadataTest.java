@@ -51,7 +51,8 @@ class ClientOnlyMetadataTest {
 	@Test
 	void registersOnlyTheClientEntrypoint() {
 		JsonObject entrypoints = modJson.getAsJsonObject("entrypoints");
-		assertEquals(Set.of("client"), entrypoints.keySet(), "no main or server entrypoint may be registered");
+		// "modmenu" is only called by Mod Menu itself, on the client; main and server entrypoints stay forbidden.
+		assertEquals(Set.of("client", "modmenu"), entrypoints.keySet(), "no main or server entrypoint may be registered");
 
 		JsonArray clientEntrypoints = entrypoints.getAsJsonArray("client");
 		assertEquals(1, clientEntrypoints.size());

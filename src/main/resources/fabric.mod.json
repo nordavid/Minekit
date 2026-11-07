@@ -18,6 +18,9 @@
 	"entrypoints": {
 		"client": [
 			"io.github.nordavid.minekit.MinekitClient"
+		],
+		"modmenu": [
+			"io.github.nordavid.minekit.compat.ModMenuIntegration"
 		]
 	},
 	"depends": {
