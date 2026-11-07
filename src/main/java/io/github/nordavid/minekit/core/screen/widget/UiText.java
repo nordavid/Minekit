@@ -1,18 +1,55 @@
 package io.github.nordavid.minekit.core.screen.widget;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
+import org.jspecify.annotations.Nullable;
 
 /** Text helpers shared by Minekit widgets. Minekit draws flat text without drop shadow. */
 public final class UiText {
 	private static final String ELLIPSIS = "…";
+	private static @Nullable Path auditFile;
+	private static final Set<String> audited = new HashSet<>();
 
 	private UiText() {
+	}
+
+	/**
+	 * For tests: from now on, every text that has to be shortened is written to {@code file} once per screen, with the
+	 * width it needed, so cut-off labels can be found across all screens.
+	 */
+	public static void auditTruncations(Path file) {
+		auditFile = file;
+	}
+
+	private static void recordTruncation(String text, String needed, String available) {
+		Path file = auditFile;
+		if (file == null) {
+			return;
+		}
+		var screen = Minecraft.getInstance().gui.screen();
+		String where = screen == null ? "hud" : screen.getClass().getSimpleName();
+		if (!audited.add(where + "|" + text)) {
+			return;
+		}
+		String line = where + " | needs " + needed + ", has " + available + " | " + text.replace('\n', ' ') + System.lineSeparator();
+		try {
+			Files.writeString(file, line, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+		} catch (IOException e) {
+			auditFile = null;
+		}
 	}
 
 	/** Shortens {@code text} with an ellipsis so it fits into {@code maxWidth}. */
@@ -23,6 +60,7 @@ public final class UiText {
 		if (font.width(text) <= maxWidth) {
 			return text;
 		}
+		recordTruncation(text, font.width(text) + " px", maxWidth + " px");
 		return font.plainSubstrByWidth(text, Math.max(0, maxWidth - font.width(ELLIPSIS))) + ELLIPSIS;
 	}
 
@@ -37,6 +75,7 @@ public final class UiText {
 			result.add(lines.get(i).getString());
 		}
 		if (lines.size() > maxLines && maxLines > 0) {
+			recordTruncation(text, lines.size() + " lines", maxLines + " lines");
 			StringBuilder rest = new StringBuilder();
 			for (int i = maxLines - 1; i < lines.size(); i++) {
 				rest.append(lines.get(i).getString()).append(' ');

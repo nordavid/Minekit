@@ -93,7 +93,7 @@ public final class StorageFinderModule implements MinekitModule {
 		bridge.connect(item -> isEnabled() && store != null
 				? store.current().known(item).map(known -> new StorageBridge.Known(known.total(), known.containers(), known.oldestObservedAt()))
 				: Optional.empty());
-		ClientTickEvents.END_CLIENT_TICK.register(this::syncContext);
+		ClientTickEvents.END_CLIENT_TICK.register(client -> context.guard("tick", () -> syncContext(client)));
 	}
 
 	public boolean isEnabled() {

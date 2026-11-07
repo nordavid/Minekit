@@ -3,6 +3,18 @@
 All notable changes to Minekit. Versions follow [semantic versioning](https://semver.org/); before 1.0.0, a minor
 version may change behavior.
 
+## 0.8.1 (2026-11-07)
+
+Phase 7, first part: robustness and small screens.
+
+- A bug in one part of Minekit no longer crashes the game: that part stops for the session, the others keep running,
+  and a notification says so. A failure in the middle of moving items stops the job and moves nothing else.
+- Texts fit on small screens: list rows put their status on a second line when needed, the Smart Deposit panel shows
+  whole profile descriptions and grows for its help, the Loadout panel shows its progress on two lines, the hotbar
+  rule picker is wider.
+- The project builds and runs its unit tests on GitHub Actions for every change; `gradlew` is executable on Linux and
+  macOS.
+
 ## 0.8.0 (2026-11-07)
 
 The first public release. Minekit runs on Minecraft Java Edition 26.3 with Fabric Loader 0.20.1+ and Fabric API

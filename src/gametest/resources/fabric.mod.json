@@ -7,6 +7,9 @@
 	"license": "MIT",
 	"environment": "client",
 	"entrypoints": {
+		"client": [
+			"io.github.nordavid.minekit.gametest.GameTestSetup"
+		],
 		"fabric-client-gametest": [
 			"io.github.nordavid.minekit.gametest.MinekitClientGameTest",
 			"io.github.nordavid.minekit.gametest.CraftingGameTest",

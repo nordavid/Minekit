@@ -105,8 +105,8 @@ public final class LoadoutOverlay implements ContainerPanels.Panel {
 		widgets.clear();
 		module.panels().register(this);
 		layout();
-		ScreenEvents.afterExtract(screen).register((current, graphics, mouseX, mouseY, tickDelta) -> extractHighlights(graphics));
-		ScreenEvents.afterTick(screen).register(current -> tick());
+		ScreenEvents.afterExtract(screen).register((current, graphics, mouseX, mouseY, tickDelta) -> module.context().guard("draw", () -> extractHighlights(graphics)));
+		ScreenEvents.afterTick(screen).register(current -> module.context().guard("tick", this::tick));
 		ScreenMouseEvents.allowMouseRelease(screen).register((current, event) -> {
 			if (!covers(event.x(), event.y())) {
 				return true;
@@ -321,8 +321,9 @@ public final class LoadoutOverlay implements ContainerPanels.Panel {
 			UiText.draw(graphics, font, getMessage(), x, getY() + 8, inner, MinekitTheme.ACCENT);
 			int y = getY() + 22 + 2 * (ROW + 4) + 2;
 			if (module.isApplying()) {
-				UiText.draw(graphics, font, Component.translatable("minekit.loadout.running", module.runningClicks()), x, getY() + 22 + ROW + 8, inner,
-						MinekitTheme.TEXT);
+				UiText.draw(graphics, font, Component.translatable("minekit.loadout.running"), x, getY() + 22 + ROW + 8, inner, MinekitTheme.TEXT);
+				UiText.draw(graphics, font, Component.translatable("minekit.deposit.running_clicks", module.runningClicks()), x,
+						getY() + 22 + ROW + 8 + LINE, inner, MinekitTheme.TEXT_MUTED);
 				return;
 			}
 			if (planned == null) {

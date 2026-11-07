@@ -136,11 +136,11 @@ public final class StorageDepositGameTest implements FabricClientGameTest {
 		context.takeScreenshot("minekit-storage-01b-help-" + where);
 		GameTestMouse.clickAt(context, panel[0] + panel[2] - 14, panel[1] + 11);
 		check(!context.computeOnClient(client -> deposit.overlay().orElseThrow().isShowingHelp()), where + ": clicking it again shows the preview");
-		GameTestMouse.clickWidget(context, "minekit.deposit.profile_button");
+		clickProfileButton(context);
 		check(deposit.settings().current().profile() == DepositProfile.ALL, where + ": a click on the profile button switches the profile, got "
 				+ deposit.settings().current().profile());
 		for (int i = 1; i < DepositProfile.ORDER.size(); i++) {
-			GameTestMouse.clickWidget(context, "minekit.deposit.profile_button");
+			clickProfileButton(context);
 		}
 		check(deposit.settings().current().profile() == DepositProfile.MATCHING, where + ": the profiles cycle back to Matching");
 		DepositPlanner.Plan again = context.computeOnClient(client -> deposit.overlay().flatMap(overlay -> overlay.plan()).orElse(null));
@@ -440,6 +440,12 @@ public final class StorageDepositGameTest implements FabricClientGameTest {
 
 	private static String xyz(BlockPos pos) {
 		return pos.getX() + " " + pos.getY() + " " + pos.getZ();
+	}
+
+	/** The profile button says "Profile: Matching", or only "Matching" on a narrow panel. */
+	private static void clickProfileButton(ClientGameTestContext context) {
+		GameTestMouse.clickWidget(context, "the profile button", key -> key.equals("minekit.deposit.profile_button")
+				|| key.startsWith("minekit.deposit.profile.") && !key.endsWith(".description"));
 	}
 
 	private static void check(boolean condition, String description) {

@@ -134,7 +134,7 @@ public final class BlueprintModule implements MinekitModule {
 				"measure clear messen löschen", () -> measureA == null ? Optional.of(Component.translatable("minekit.measure.nothing"))
 						: unavailableReason(), this::measureClear));
 		dashboardPages.register(new BlueprintDashboardPage(this));
-		ClientTickEvents.END_CLIENT_TICK.register(this::tick);
+		ClientTickEvents.END_CLIENT_TICK.register(client -> context.guard("tick", () -> tick(client)));
 	}
 
 	@Override

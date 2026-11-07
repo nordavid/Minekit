@@ -114,7 +114,7 @@ public final class ResourceTrackerModule implements MinekitModule {
 				notifications.success(Component.translatable("minekit.resources.goals_added", newGoals.size()));
 			}
 		});
-		ClientTickEvents.END_CLIENT_TICK.register(this::tick);
+		ClientTickEvents.END_CLIENT_TICK.register(client -> context.guard("tick", () -> tick(client)));
 	}
 
 	@Override

@@ -40,14 +40,19 @@ final class GameTestMouse {
 
 	/** Left click on the center of the visible widget of the current screen whose message has this translation key. */
 	static void clickWidget(ClientGameTestContext context, String translationKey) {
+		clickWidget(context, translationKey, translationKey::equals);
+	}
+
+	/** Left click on the center of the first visible widget whose message has a translation key that matches. */
+	static void clickWidget(ClientGameTestContext context, String description, java.util.function.Predicate<String> key) {
 		double[] center = context.computeOnClient(client -> {
 			for (AbstractWidget widget : Screens.getWidgets(client.gui.screen())) {
 				if (widget.visible && widget.getMessage().getContents() instanceof TranslatableContents contents
-						&& contents.getKey().equals(translationKey)) {
+						&& key.test(contents.getKey())) {
 					return new double[] {widget.getX() + widget.getWidth() / 2.0, widget.getY() + widget.getHeight() / 2.0};
 				}
 			}
-			throw new AssertionError("no visible widget '" + translationKey + "' on " + client.gui.screen());
+			throw new AssertionError("no visible widget '" + description + "' on " + client.gui.screen());
 		});
 		clickAt(context, center[0], center[1]);
 	}
