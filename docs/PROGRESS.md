@@ -552,6 +552,6 @@ Asked for after the 0.9.0 test: the most common way to show a blueprint in the w
 |---|---|
 | Unit tests | All passed. New: `GhostSelectionTest` 4 (candidates per layer range, nearest first, sides covered by solid neighbors and not by glass or layers outside the range, 100 random turns and mirrors); `BlueprintSettingsCodecTest` with the opacity. |
 | Gametest: world | The tower, the showcase and the large structure appear as textured ghost blocks in place (screenshots); the Quick Action switches to "around me" and the ghost stops. |
-| Gametest: cost | The 40 x 20 x 40 stone and glass checkerboard fills the 24 000-quad budget; writing them took 0.9 to 1.6 ms per frame; 82 fps with the ghost, 100 without, in the same scene. |
-| Compatibility run | All eight gametest classes pass with Sodium, Iris and Mod Menu; the ghost looks the same; 36 fps with it, 39 without. |
+| Gametest: cost | The 40 x 20 x 40 stone and glass checkerboard (a worst case: every block shows all its sides) fills the 24 000-quad budget; writing them took 0.9 to 1.6 ms per frame. Same scene, with and without the ghost, three runs: 82 and 100 fps, 36 and 39 (compatibility run), 28 and 39, so 8 to 28 % fewer frames. |
+| Compatibility run | All eight gametest classes pass with Sodium, Iris and Mod Menu; the ghost looks the same. |
 | All gametests | All eight gametest classes pass. |

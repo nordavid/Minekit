@@ -53,6 +53,7 @@ appeared and disappeared while walking, and upper layers of tall builds were mis
 - In the real client the ghost blocks appear where the blueprint is placed, with the blocks' textures (stone,
   planks, cobblestone, slime, a dispenser, glass), turned like the placement; switching to "around me" stops them.
 - A 40 x 20 x 40 checkerboard of stone and glass (every block shows all its sides) fills the budget of 24 000 quads;
-  writing them takes 0.9 to 1.6 ms per frame. In the same scene the game ran at 82 fps with the ghost and 100 without
-  it; with Sodium, Iris and Mod Menu loaded at 36 and 39 fps.
+  writing them takes 0.9 to 1.6 ms per frame. In the same scene, three runs gave 82 fps with the ghost and 100
+  without it, 36 and 39 (with Sodium, Iris and Mod Menu), and 28 and 39: between 8 and 28 % fewer frames in this
+  worst case. Ordinary builds hide most sides behind their neighbors and stay far below the budget.
 - With Sodium and Iris (shaders off) the ghost looks the same.
