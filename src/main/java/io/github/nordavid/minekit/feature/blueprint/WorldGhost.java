@@ -27,14 +27,15 @@ final class WorldGhost {
 	/** Faces drawn per tick at most; beyond that the nearest are chosen again when the player has moved a bit. */
 	static final int MAX_FACES = 12_000;
 	private static final int RESELECT_DISTANCE = 6;
-	private static final int ALPHA_TO_PLACE = 0x60;
-	private static final int ALPHA_UNCHECKED = 0x30;
+	private static final int ALPHA_TO_PLACE = 0x90;
+	private static final int ALPHA_UNCHECKED = 0x48;
 	private static final int COLOR_WRONG = 0xA0E5716F;
 	/** Brightness of each side (down, up, north, south, west, east), as in Minecraft's block shading. */
 	private static final double[] SHADE = {0.5, 1.0, 0.8, 0.8, 0.6, 0.6};
 	private static final Direction[] DIRECTIONS = Direction.values();
 	private static final double INSET = 0.004;
 	private static final double OUTSET = 0.012;
+	private static final int[] FULL_BOX = {0, 0, 0, 16, 16, 16};
 
 	private record Key(Blueprint blueprint, Placement placement, BlueprintSettings.LayerRange range) {
 	}
@@ -42,7 +43,9 @@ final class WorldGhost {
 	private @Nullable Key key;
 	private long @Nullable [] shell;
 	private long @Nullable [] selected;
-	private int[] colors = new int[0];
+	/** Per palette entry, in the world's orientation: the color of each side and the block's box in sixteenths. */
+	private int[][] colors = new int[0][];
+	private int[][] boxes = new int[0][];
 	private @Nullable BlockPos selectedAround;
 	private boolean selecting;
 	private int generation;
@@ -104,19 +107,23 @@ final class WorldGhost {
 			int wy = placement.worldY(y);
 			int wz = placement.worldZ(blueprint, x, z);
 			int side = GhostShell.worldSide(GhostShell.side(face), placement);
+			int palette = blueprint.paletteIndexAt(index);
 			int color;
 			double grow;
+			int[] box = FULL_BOX;
 			if (status == Status.WRONG) {
-				// A real block stands there: draw just outside it so the red is seen on its surface.
+				// A real block stands there: draw just outside its cell so the red is seen on its surface.
 				color = COLOR_WRONG;
 				grow = OUTSET;
 			} else {
-				int base = colors[blueprint.paletteIndexAt(index)];
+				int base = colors[palette][side];
 				int alpha = status == Status.UNCHECKED ? ALPHA_UNCHECKED : ALPHA_TO_PLACE;
 				color = (IsometricView.shade(base, SHADE[side]) & 0xFFFFFF) | alpha << 24;
 				grow = -INSET;
+				box = boxes[palette];
 			}
-			Gizmos.rect(new Vec3(wx - grow, wy - grow, wz - grow), new Vec3(wx + 1 + grow, wy + 1 + grow, wz + 1 + grow), DIRECTIONS[side],
+			Gizmos.rect(new Vec3(wx + box[0] / 16.0 - grow, wy + box[1] / 16.0 - grow, wz + box[2] / 16.0 - grow),
+					new Vec3(wx + box[3] / 16.0 + grow, wy + box[4] / 16.0 + grow, wz + box[5] / 16.0 + grow), DIRECTIONS[side],
 					styles.computeIfAbsent(color, GizmoStyle::fill));
 			drawnLastTick++;
 		}
@@ -128,15 +135,25 @@ final class WorldGhost {
 		int size = blueprint.palette().size();
 		boolean[] drawn = new boolean[size];
 		boolean[] solid = new boolean[size];
-		colors = new int[size];
+		colors = new int[size][];
+		boxes = new int[size][];
 		for (int i = 0; i < size; i++) {
 			if (blueprint.palette().get(i).isAir()) {
 				continue;
 			}
-			BlockState state = resolved.state(i);
+			// Turned like in the world, so its sides and box match the world's directions.
+			BlockLooks.Look look = BlockLooks.of(resolved.expected(i, next.placement()));
 			drawn[i] = true;
-			solid[i] = state == null || !LayerTexture.seeThrough(state);
-			colors[i] = LayerTexture.blockColor(state);
+			if (look == null) {
+				solid[i] = true;
+				colors[i] = new int[] {LayerTexture.UNKNOWN, LayerTexture.UNKNOWN, LayerTexture.UNKNOWN, LayerTexture.UNKNOWN, LayerTexture.UNKNOWN,
+						LayerTexture.UNKNOWN};
+				boxes[i] = FULL_BOX;
+			} else {
+				solid[i] = look.solid();
+				colors[i] = look.colors();
+				boxes[i] = look.box();
+			}
 		}
 		int ticket = generation;
 		selecting = true;

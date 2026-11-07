@@ -425,11 +425,13 @@ public final class BlueprintScreen extends Screen {
 		if (shown == null || tab != Tab.LAYERS || whole || mapScale <= 0) {
 			return null;
 		}
-		int px = (int) Math.floor((mouseX - texture.drawnX()) / mapScale);
-		int pz = (int) Math.floor((mouseY - texture.drawnY()) / mapScale);
-		if (px < 0 || pz < 0 || px >= texture.width() || pz >= texture.height()) {
+		int tx = (int) Math.floor((mouseX - texture.drawnX()) / mapScale);
+		int tz = (int) Math.floor((mouseY - texture.drawnY()) / mapScale);
+		if (tx < 0 || tz < 0 || tx >= texture.width() || tz >= texture.height()) {
 			return null;
 		}
+		int px = tx / texture.texelsPerBlock();
+		int pz = tz / texture.texelsPerBlock();
 		Optional<Placement> placement = module.placement();
 		if (placement.isEmpty()) {
 			return new int[] {px, pz};
