@@ -192,6 +192,10 @@ public final class BlueprintScreen extends Screen {
 	private void buildOverview(ResolvedBlueprint resolved) {
 		Blueprint blueprint = resolved.blueprint();
 		Optional<Placement> placement = module.placement();
+		if (blueprint.format() == Blueprint.Format.MCEDIT) {
+			// Converters often drop what the old format cannot hold, so a .schematic may lack blocks the original has.
+			pane.text(Component.translatable("minekit.blueprint.mcedit_hint"), MinekitTheme.WARNING);
+		}
 		pane.heading(Component.translatable("minekit.blueprint.placement"));
 		if (placement.isEmpty()) {
 			pane.text(Component.translatable("minekit.blueprint.not_placed"), MinekitTheme.TEXT_MUTED);
