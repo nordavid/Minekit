@@ -29,7 +29,7 @@ import org.jspecify.annotations.Nullable;
  * it), and draws the picker after its widgets, so the picker is on top.
  */
 final class HotbarLayoutEditor {
-	private static final int ENTRY_WIDTH = 104;
+	private static final int ENTRY_WIDTH = 112;
 	private static final int ENTRY_HEIGHT = 18;
 	private static final int COLUMNS = 2;
 	private static final int GAP = 4;

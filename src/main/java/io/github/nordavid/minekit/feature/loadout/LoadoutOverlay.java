@@ -321,8 +321,9 @@ public final class LoadoutOverlay implements ContainerPanels.Panel {
 			UiText.draw(graphics, font, getMessage(), x, getY() + 8, inner, MinekitTheme.ACCENT);
 			int y = getY() + 22 + 2 * (ROW + 4) + 2;
 			if (module.isApplying()) {
-				UiText.draw(graphics, font, Component.translatable("minekit.loadout.running", module.runningClicks()), x, getY() + 22 + ROW + 8, inner,
-						MinekitTheme.TEXT);
+				UiText.draw(graphics, font, Component.translatable("minekit.loadout.running"), x, getY() + 22 + ROW + 8, inner, MinekitTheme.TEXT);
+				UiText.draw(graphics, font, Component.translatable("minekit.deposit.running_clicks", module.runningClicks()), x,
+						getY() + 22 + ROW + 8 + LINE, inner, MinekitTheme.TEXT_MUTED);
 				return;
 			}
 			if (planned == null) {

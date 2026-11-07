@@ -55,13 +55,15 @@ public final class ContentPane {
 
 	/**
 	 * A line with an optional item icon and label on the left, an optional status text on the right and optional
-	 * widgets right-aligned after it. Without icon, label and status, a single widget spans the full width.
+	 * widgets right-aligned after it. Without icon, label and status, a single widget spans the full width. If label
+	 * and status do not fit side by side, the line is {@code stacked}: the status goes below the label.
 	 */
 	private record Line(@Nullable ItemStack icon, @Nullable Component label, @Nullable Component status, int statusColor,
-			List<AbstractWidget> widgets) implements Row {
+			List<AbstractWidget> widgets, boolean stacked) implements Row {
 		@Override
 		public int height() {
-			int content = Math.max(icon != null ? ICON_SIZE + 2 : 0, label != null || status != null ? STATUS_HEIGHT : 0);
+			int text = stacked ? 2 * MinekitTheme.LINE_HEIGHT : label != null || status != null ? STATUS_HEIGHT : 0;
+			int content = Math.max(icon != null ? ICON_SIZE + 2 : 0, text);
 			for (AbstractWidget widget : widgets) {
 				content = Math.max(content, widget.getHeight());
 			}
@@ -119,19 +121,19 @@ public final class ContentPane {
 
 	/** Adds a line with a label on the left and a status value on the right. */
 	public void status(Component label, Component status, int statusColor) {
-		rows.add(new Line(null, label, status, statusColor, List.of()));
+		line(null, label, status, statusColor);
 	}
 
 	/** Adds a widget already registered with the screen as a full-width row. */
 	public <T extends AbstractWidget> T widget(T widget) {
 		widget.setWidth(width());
-		rows.add(new Line(null, null, null, 0, List.of(widget)));
+		rows.add(new Line(null, null, null, 0, List.of(widget), false));
 		return widget;
 	}
 
 	/** Adds a label with widgets (already registered with the screen) right-aligned on the same line. */
 	public void labeled(Component label, AbstractWidget... widgets) {
-		rows.add(new Line(null, label, null, 0, List.of(widgets)));
+		rows.add(new Line(null, label, null, 0, List.of(widgets), false));
 	}
 
 	/**
@@ -140,7 +142,13 @@ public final class ContentPane {
 	 */
 	public void line(@Nullable ItemStack icon, @Nullable Component label, @Nullable Component status, int statusColor,
 			AbstractWidget... widgets) {
-		rows.add(new Line(icon, label, status, statusColor, List.of(widgets)));
+		List<AbstractWidget> list = List.of(widgets);
+		boolean stacked = false;
+		if (label != null && status != null) {
+			int available = width() - (icon != null ? ICON_SIZE + 4 : 0) - (list.isEmpty() ? 0 : totalWidth(list) + 6);
+			stacked = font.width(label) + 6 + font.width(status) > available;
+		}
+		rows.add(new Line(icon, label, status, statusColor, list, stacked));
 	}
 
 	public void spacer(int pixels) {
@@ -313,6 +321,12 @@ public final class ContentPane {
 			left += 4;
 		}
 		int right = x + rowWidth - (line.widgets().isEmpty() ? 0 : totalWidth(line.widgets()) + 6);
+		if (line.stacked()) {
+			int firstY = top + (rowHeight - 2 * MinekitTheme.LINE_HEIGHT) / 2 + 1;
+			UiText.draw(graphics, font, Objects.requireNonNull(line.label()), left, firstY, right - left, MinekitTheme.TEXT);
+			UiText.draw(graphics, font, Objects.requireNonNull(line.status()), left, firstY + MinekitTheme.LINE_HEIGHT, right - left, line.statusColor());
+			return;
+		}
 		int statusWidth = 0;
 		if (line.status() != null) {
 			statusWidth = Math.min(font.width(line.status()), (right - left) / 2);

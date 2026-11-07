@@ -333,7 +333,10 @@ public final class LoadoutScreen extends Screen {
 		extractGrid(graphics, loadout);
 		extractSummary(graphics);
 		int hintY = gridY + GRID_HEIGHT + 4 + 3 * LINE + 2 + ROW + 4;
-		UiText.draw(graphics, font, Component.translatable("minekit.loadout.grid_hint"), rightX, hintY, rightWidth, MinekitTheme.TEXT_DISABLED);
+		for (String line : UiText.wrap(font, Component.translatable("minekit.loadout.grid_hint").getString(), rightWidth, 2)) {
+			graphics.text(font, line, rightX, hintY, MinekitTheme.TEXT_DISABLED, false);
+			hintY += LINE;
+		}
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
 		int hovered = positionAt(mouseX, mouseY);

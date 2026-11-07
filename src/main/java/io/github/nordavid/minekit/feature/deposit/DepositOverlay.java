@@ -51,8 +51,7 @@ public final class DepositOverlay implements ContainerPanels.Panel {
 	private static final int LINE = MinekitTheme.LINE_HEIGHT;
 	private static final int PROFILE_Y = 22;
 	private static final int DESCRIPTION_Y = PROFILE_Y + ROW + 3;
-	private static final int DESCRIPTION_LINES = 2;
-	private static final int ACTIONS_Y = DESCRIPTION_Y + DESCRIPTION_LINES * LINE + 2;
+	private static final int MAX_DESCRIPTION_LINES = 4;
 	private static final int HELP_BUTTON = 16;
 	private static final String[] HELP = {"minekit.deposit.help.what", "minekit.deposit.help.profile", "minekit.deposit.help.protected",
 			"minekit.deposit.help.colors", "minekit.deposit.help.confirm"};
@@ -78,6 +77,7 @@ public final class DepositOverlay implements ContainerPanels.Panel {
 	private int panelY;
 	private int panelWidth;
 	private int panelHeight;
+	private int descriptionLines = 2;
 
 	DepositOverlay(SmartDepositModule module, AbstractContainerScreen<?> screen, OpenedContainer container) {
 		this.module = Objects.requireNonNull(module, "module");
@@ -158,6 +158,29 @@ public final class DepositOverlay implements ContainerPanels.Panel {
 			panelWidth = Math.min(PANEL_WIDTH, screen.width - 8);
 			panelX = 4;
 		}
+		Font font = Minecraft.getInstance().font;
+		int inner = panelWidth - 16;
+		// As many description lines as the longest profile description needs at this width, so switching profiles
+		// never moves the buttons.
+		descriptionLines = 1;
+		for (DepositProfile profile : DepositProfile.values()) {
+			String text = Component.translatable(profile.translationKey() + ".description").getString();
+			descriptionLines = Math.max(descriptionLines, UiText.wrap(font, text, inner, MAX_DESCRIPTION_LINES).size());
+		}
+		if (help) {
+			// The explanation needs more room on narrow panels: grow the panel downward as far as the screen allows, so
+			// the button that closes it stays where the one that opened it was.
+			int needed = PROFILE_Y + 6;
+			for (String key : HELP) {
+				needed += UiText.wrap(font, Component.translatable(key).getString(), inner, 99).size() * LINE + 4;
+			}
+			panelHeight = Math.max(panelHeight, Math.min(needed, screen.height - 4 - panelY));
+		}
+	}
+
+	/** Where the confirm and cancel buttons are, below the profile description. */
+	private int actionsY() {
+		return DESCRIPTION_Y + descriptionLines * LINE + 2;
 	}
 
 	private boolean covers(double x, double y) {
@@ -200,6 +223,8 @@ public final class DepositOverlay implements ContainerPanels.Panel {
 
 	private void toggleHelp() {
 		help = !help;
+		// The explanation may need a taller panel.
+		layout();
 		rebuildLater();
 	}
 
@@ -294,21 +319,31 @@ public final class DepositOverlay implements ContainerPanels.Panel {
 		if (help) {
 			return;
 		}
-		add(new FlatButton(x, panelY + PROFILE_Y, inner, ROW, Component.translatable("minekit.deposit.profile_button",
-				Component.translatable(module.settings().current().profile().translationKey())), button -> {
+		// "Profile: Matching" if it fits, else only the name; the tooltip says what the button does either way.
+		Component profileName = Component.translatable(module.settings().current().profile().translationKey());
+		Component profileLabel = Component.translatable("minekit.deposit.profile_button", profileName);
+		Font font = Minecraft.getInstance().font;
+		FlatButton profileButton = add(new FlatButton(x, panelY + PROFILE_Y, inner, ROW, font.width(profileLabel) + 8 <= inner ? profileLabel
+				: profileName, button -> {
 					module.cycleProfile();
 					replan();
 					rebuildLater();
 				}));
+		profileButton.setTooltip(Tooltip.create(Component.translatable("minekit.deposit.profile_tooltip")));
 		int half = (inner - 4) / 2;
-		FlatButton confirm = add(new FlatButton(x, panelY + ACTIONS_Y, half, ROW, Component.translatable("minekit.deposit.confirm"),
+		FlatButton confirm = add(new FlatButton(x, panelY + actionsY(), half, ROW, Component.translatable("minekit.deposit.confirm"),
 				button -> confirm()));
 		confirm.active = plan != null && plan.refusal().isEmpty();
-		add(new FlatButton(x + half + 4, panelY + ACTIONS_Y, inner - half - 4, ROW, Component.translatable("minekit.deposit.cancel"),
+		add(new FlatButton(x + half + 4, panelY + actionsY(), inner - half - 4, ROW, Component.translatable("minekit.deposit.cancel"),
 				button -> close()));
 		if (plan != null && hasProtectedFavorites(plan)) {
-			ToggleButton favoritesToggle = add(new ToggleButton(x, panelY + ACTIONS_Y + ROW + 4, inner, ROW,
-					Component.translatable("minekit.deposit.include_favorites"), includeFavorites, requested -> {
+			Component favoritesLabel = Component.translatable("minekit.deposit.include_favorites");
+			// The switch takes about 34 pixels of the row.
+			if (font.width(favoritesLabel) + 34 > inner) {
+				favoritesLabel = Component.translatable("minekit.deposit.include_favorites_short");
+			}
+			ToggleButton favoritesToggle = add(new ToggleButton(x, panelY + actionsY() + ROW + 4, inner, ROW, favoritesLabel, includeFavorites,
+					requested -> {
 						includeFavorites = requested;
 						replan();
 						rebuildLater();
@@ -321,7 +356,7 @@ public final class DepositOverlay implements ContainerPanels.Panel {
 	/** Where the text below the controls starts. */
 	private int contentTop(DepositPlanner.Plan current) {
 		int rows = hasProtectedFavorites(current) ? 2 : 1;
-		return panelY + ACTIONS_Y + rows * (ROW + 4) + 4;
+		return panelY + actionsY() + rows * (ROW + 4) + 4;
 	}
 
 	private boolean hasProtectedFavorites(DepositPlanner.Plan current) {
@@ -389,7 +424,7 @@ public final class DepositOverlay implements ContainerPanels.Panel {
 				return;
 			}
 			Component description = Component.translatable(module.settings().current().profile().translationKey() + ".description");
-			lines(graphics, font, UiText.wrap(font, description.getString(), inner, DESCRIPTION_LINES), x, getY() + DESCRIPTION_Y,
+			lines(graphics, font, UiText.wrap(font, description.getString(), inner, descriptionLines), x, getY() + DESCRIPTION_Y,
 					MinekitTheme.TEXT_MUTED);
 			// Notes at the bottom; the item list gets the space between them and the controls.
 			List<String> remainingNote = List.of();
