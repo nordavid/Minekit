@@ -3,6 +3,10 @@
 All notable changes to Minekit. Versions follow [semantic versioning](https://semver.org/); before 1.0.0, a minor
 version may change behavior.
 
+## Unreleased
+
+- A test checklist for players ([docs/TESTING.md](docs/TESTING.md)) and issue forms for bugs and ideas on GitHub.
+
 ## 0.10.2 (2026-11-07)
 
 - The blueprint block in the crosshair is framed in amber, and its name, icon and orientation are shown below the

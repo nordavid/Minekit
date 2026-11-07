@@ -11,7 +11,9 @@ Everything runs on your own client. Servers and other players need nothing insta
 player has anyway: the items it can see and the clicks it could make by hand.
 
 > **Status:** 0.10.2, in active development. Every feature below is covered by unit tests and by automated tests in
-> the real game client, in single player and on a dedicated server. See [docs/PROGRESS.md](docs/PROGRESS.md).
+> the real game client, in single player and on a dedicated server. Before 1.0 it needs testing by players: the
+> [test checklist](docs/TESTING.md) says what to try, and [issues](https://github.com/nordavid/Minekit/issues/new/choose)
+> are welcome. See [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## Features
 
@@ -87,6 +89,7 @@ development client and the project layout are described in [docs/DEVELOPMENT.md]
 - [User guide](docs/USER_GUIDE.md): every feature, where your data is stored, known limitations, troubleshooting
 - [Development](docs/DEVELOPMENT.md): versions, build, tests, development client, project layout
 - [Architecture decisions](docs/adr/): why things are built the way they are
+- [Testing](docs/TESTING.md): what to try when you test Minekit, and how to report a problem
 - [Progress](docs/PROGRESS.md) and [project plan](PROJECT_PLAN.md)
 
 ## License
