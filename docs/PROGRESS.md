@@ -531,3 +531,27 @@ Found in the manual test of 0.8.x with a TNT launcher from a download site. Deta
 | Gametest: textured views | A showcase blueprint with cobblestone, a sticky piston, slime, a dispenser, a repeater, redstone, a button, glass, an oak slab, grass and leaves. In the real client cobblestone has six 16 x 16 sides and is solid, the slab's box is 8/16 high, the repeater's 2/16, glass is not solid, and the grass top is tinted green. Screenshots: the 3D view shows the textures (glass frame, slime, dispenser opening, grass, leaves), the plan the cobblestone texture, the world the colored ghost. |
 | Gametest: Mod Menu (compatibility run) | Minekit's entry has the settings button; it opens the dashboard, and Escape returns to Mod Menu. Without Mod Menu everything runs as before; the JAR contains only `ModMenuIntegration`, no Mod Menu classes. |
 | All gametests | All eight gametest classes pass, with and without Sodium, Iris and Mod Menu. |
+
+## 0.10.0: Ghost blocks in the world (done, 2026-11-07)
+
+Asked for after the 0.9.0 test: the most common way to show a blueprint in the world. Decision and alternatives:
+[ADR 0009](adr/0009-ghost-blocks-in-the-world.md).
+
+- [x] The whole structure as ghost blocks: real block models and textures through the game's translucent render type
+  (Fabric `COLLECT_SUBMITS`, no mixin); correct blocks not drawn, wrong ones in a red box, unchecked ones fainter
+- [x] Sides touching a solid neighbor left out; the nearest blocks first, up to 24 000 quads per frame; selection in
+  the background when the player has moved six blocks
+- [x] Ghost opacity setting (30, 50, 70 %) on the Overview
+- [x] "Around me" as a sphere of ten blocks
+- [x] The colored-face ghost of 0.8 and 0.9 (`WorldGhost`, `GhostShell`) removed
+- [ ] Manual check of 0.10.0 in the Modrinth instance
+
+### Verification log (2026-11-07)
+
+| Check | Result |
+|---|---|
+| Unit tests | All passed. New: `GhostSelectionTest` 4 (candidates per layer range, nearest first, sides covered by solid neighbors and not by glass or layers outside the range, 100 random turns and mirrors); `BlueprintSettingsCodecTest` with the opacity. |
+| Gametest: world | The tower, the showcase and the large structure appear as textured ghost blocks in place (screenshots); the Quick Action switches to "around me" and the ghost stops. |
+| Gametest: cost | The 40 x 20 x 40 stone and glass checkerboard fills the 24 000-quad budget; writing them took 0.9 to 1.6 ms per frame; 82 fps with the ghost, 100 without, in the same scene. |
+| Compatibility run | All eight gametest classes pass with Sodium, Iris and Mod Menu; the ghost looks the same; 36 fps with it, 39 without. |
+| All gametests | All eight gametest classes pass. |

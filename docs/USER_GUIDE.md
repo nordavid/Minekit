@@ -174,12 +174,13 @@ places a block; you build.
    the window, or put it into the blueprint folder (*Open folder*). Minekit copies dropped files; the original stays
    untouched. Choose a blueprint on the left. If a file cannot be read, the screen says why.
 2. *Place in front of me*. Move it block by block (Shift: ten), turn it, mirror it, or move it to where you stand.
-3. Build. The whole structure stands in the world: every block still to place is shown see-through in the colors of
-   its texture and in its shape (a slab half high), wrong blocks are red, and blocks you placed correctly simply look like themselves. The next block (the
-   nearest open one in the lowest unfinished layer) is amber, with its name. Switch off *Whole structure in the world*
-   (or use Quick Actions → *Blueprint: whole structure or only around me*) to see only the missing (teal) and wrong
-   blocks within ten blocks of you. Limiting the layers being built (*Layers* tab) also cuts the structure open in the
-   world. A very large structure shows its nearest 12 000 faces.
+3. Build. The whole structure stands in the world as ghost blocks: every block still to place is shown as the real
+   block, translucent; wrong blocks get a red box, and blocks you placed correctly simply look like themselves. The
+   next block (the nearest open one in the lowest unfinished layer) is amber, with its name. *Ghost blocks: 50 %
+   opaque* on the Overview switches between 30, 50 and 70 %. Switch off *Whole structure in the world* (or use Quick
+   Actions → *Blueprint: whole structure or only around me*) to see only the missing (teal) and wrong blocks within
+   ten blocks of you, in every direction. Limiting the layers being built (*Layers* tab), for example to the layer you
+   are working on, also limits what the world shows.
 
 The screen has three tabs:
 
@@ -265,10 +266,12 @@ only.
 - Compared are the block and its orientation; not other properties (waterlogged, powered, connections), not what a
   block holds (chest contents, sign text), and not entities.
 - The screen's views use the game's textures, but each block as a single box: stairs look like full blocks, a fence
-  like its post and arms in one box. In the world the blocks are shown in the average colors of their sides, not with
-  textures.
-- In the world, a very large structure shows its nearest 12 000 faces. The 3D view does not draw structures larger
-  than about 700 x 700 blocks across; the plan still works.
+  like its post and arms in one box. The ghost blocks in the world use the real block models.
+- The ghost blocks are evenly lit, not shaded by the world's light, and block entities (chests, signs, beds) show
+  only their particle texture or nothing.
+- In the world, a very large structure shows the blocks nearest to you (24 000 block faces per frame); the rest
+  appears as you get closer. The 3D view does not draw structures larger than about 700 x 700 blocks across; the plan
+  still works.
 - Minecraft has no file dialog: drop files onto the blueprint screen or put them into the blueprint folder.
 - Old `.schematic` files cannot hold blocks added after Minecraft 1.12, and files converted to it by download sites
   often lack such blocks (pistons, slime, redstone). The Overview says so; use a `.litematic` or `.schem` if there is
