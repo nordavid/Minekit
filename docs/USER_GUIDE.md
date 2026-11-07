@@ -242,3 +242,8 @@ the `mods` folder). For later updates, a new JAR replaces the old one in the sam
 - **`K` or `J` does nothing:** another mod may use the same key. The dashboard's Overview lists conflicts. Rebind
   under *Controls → Key Binds → Minekit*. If `J` shows "Quick Actions is off", turn the module on in the dashboard
   settings.
+- **`R` in the inventory does something else too:** recipe viewers (JEI, REI, EMI) and other sorting mods often use
+  `R` as well. The dashboard's Overview lists such conflicts; give one of them another key.
+- **"... stopped after an error":** a part of Minekit ran into a bug. Only that part is switched off, until the game
+  restarts; everything else keeps working. The log (`logs/latest.log`) has the details; please report it with that
+  part of the log at https://github.com/nordavid/Minekit/issues.

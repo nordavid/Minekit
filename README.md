@@ -2,13 +2,15 @@
 
 # Minekit
 
+[![Build](https://github.com/nordavid/Minekit/actions/workflows/build.yml/badge.svg)](https://github.com/nordavid/Minekit/actions/workflows/build.yml)
+
 A client-side utility mod for Minecraft Java Edition 26.3 (Fabric). Minekit sorts your inventory, plans crafts, finds
 items in your chests, puts things away, swaps loadouts and helps you build from blueprints.
 
 Everything runs on your own client. Servers and other players need nothing installed, and Minekit only uses what a
 player has anyway: the items it can see and the clicks it could make by hand.
 
-> **Status:** 0.8.0, in active development. Every feature below is covered by unit tests and by automated tests in
+> **Status:** 0.8.1, in active development. Every feature below is covered by unit tests and by automated tests in
 > the real game client, in single player and on a dedicated server. See [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## Features

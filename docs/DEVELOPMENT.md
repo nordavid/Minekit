@@ -90,7 +90,10 @@ Minekit like a player would:
 
 They are a separate test mod (`src/gametest`), never packaged into the Minekit JAR, and not part of `build`. The
 dedicated test server accepts the Minecraft EULA (`eula = true` in `build.gradle`) and runs only locally in
-`build/run`. Screenshots go to `build/run/clientGameTest/screenshots/`. A failure ends the run with "Client
+`build/run`. Screenshots go to `build/run/clientGameTest/screenshots/`. Every run also writes
+`build/run/clientGameTest/ui-audit.txt`, one line for each text Minekit had to cut off with "…" (screen, width needed,
+width available), and logs how long each module's callbacks took (`[Minekit gametest] timing ...`). The test window
+is 854 x 480 at GUI scale 2, the smallest GUI Minecraft allows, so the audit finds labels that are too long. A failure ends the run with "Client
 gametests failed" in the log and a failed Gradle task.
 
 ## Run in the development client
@@ -109,7 +112,7 @@ to `run/` (ignored by git). To join a server straight away:
 A successful start logs:
 
 ```text
-[Minekit] Minekit 0.8.0 initialized (client-only) on Minecraft 26.3 with Fabric Loader 0.20.1
+[Minekit] Minekit 0.8.1 initialized (client-only) on Minecraft 26.3 with Fabric Loader 0.20.1
 ```
 
 On the first start of a fresh `run/` folder Minecraft shows the accessibility onboarding screen, and the

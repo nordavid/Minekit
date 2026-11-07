@@ -466,3 +466,32 @@ Requested after the 3D view: the whole structure in the world, not only in the s
 - **Colors, not textures:** the ghost uses map colors like the screen's views; blocks smaller than a cube are drawn as
   cubes.
 - **Very large structures** show their nearest 12 000 faces; the rest appears as the player walks closer.
+
+## Phase 7: Polish and release readiness (in progress)
+
+Plan (PROJECT_PLAN.md section 11): UI refinement, settings and keybind polish, error handling, performance profiling,
+compatibility testing, release packaging, user documentation and known limitations. Exit criteria: a reproducible
+release JAR, clear installation instructions and a tested feature set.
+
+- [x] Reproducible JAR: two clean builds of 0.8.0 gave the same SHA-256; the GitHub release lists the checksum
+- [x] Release packaging: GitHub release 0.8.0 with the JAR, `CHANGELOG.md`; CI on GitHub Actions (build and unit tests
+  for every push and pull request, wrapper validation, JAR as artifact); `gradlew` executable
+- [x] Error handling: module callbacks run guarded; a failure stops only that module for the session, with a
+  notification; the click executor and the container tracker's listeners are guarded (shortcuts, Quick Actions and
+  HUD elements already were)
+- [x] UI audit at the smallest GUI (427 x 240): every cut-off text is recorded during the gametests; 45 found, 3 left
+  (long item names in the narrow deposit list, the last help paragraph on the smallest screens)
+- [x] Performance: time per module callback measured over the whole gametest run (see below)
+- [x] Keybinds: conflicts with recipe viewers and sorting mods documented (Minekit already lists them on the dashboard)
+- [ ] Compatibility testing with popular mods (Sodium, Iris, Mod Menu): needs downloads, waiting for the owner's OK
+- [ ] Known limitations collected in one place in the user guide
+- [ ] Manual check of 0.8.x in the Modrinth instance
+
+### Verification log (2026-11-07, version 0.8.1)
+
+| Check | Result |
+|---|---|
+| Unit tests | All passed. New: `ModuleManagerTest` 3 (a throwing callback stops only its module, runs its cleanup once, reports it and skips its later callbacks; a throwing question returns the fallback; callbacks are timed). |
+| UI audit | First run: 45 cut-off texts on 8 screens. After the fixes: 3, all acceptable (see the list above). The deposit gametest found that the growing help panel moved its close button; it now grows downward only. |
+| Module timings (whole gametest run, 1354 ticks) | blueprints 96 us per tick on average, worst 21 ms (first placement of the 40 x 20 x 40 test structure); storage_finder 28 us, worst 2.6 ms; resource_tracker 15 us, worst 6.3 ms; smart_deposit 12 us, worst 6.3 ms; loadouts 9 us. All modules together: about 0.3 % of a 50 ms tick. |
+| All gametests | All seven gametest classes pass. |
