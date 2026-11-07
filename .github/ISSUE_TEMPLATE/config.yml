@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: User guide
+    url: https://github.com/nordavid/Minekit/blob/main/docs/USER_GUIDE.md
+    about: How every feature works, where your data is stored, and troubleshooting.
+  - name: Test checklist
+    url: https://github.com/nordavid/Minekit/blob/main/docs/TESTING.md
+    about: What to try when you test Minekit.

@@ -1,0 +1,38 @@
+name: Idea or improvement
+description: Something Minekit could do better or in addition.
+labels: [enhancement]
+body:
+  - type: dropdown
+    id: feature
+    attributes:
+      label: Feature
+      options:
+        - Dashboard, settings or shortcuts
+        - Quick Actions
+        - Smart Inventory (sorting, hotbar layout)
+        - Crafting Assistant
+        - Resource Tracker
+        - Storage Finder
+        - Smart Deposit
+        - Loadout Manager
+        - Blueprints (files, screen, ghost blocks)
+        - Measuring
+        - Something new
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What should Minekit do? Screenshots or sketches are welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it would help
+      description: The situation in the game where you missed it.
+  - type: markdown
+    attributes:
+      value: |
+        Minekit runs only on your own client and only does what a player could do by hand, so it cannot place or break blocks for you or read what the server never showed you.

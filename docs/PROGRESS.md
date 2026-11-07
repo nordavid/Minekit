@@ -73,7 +73,7 @@ Architecture: [ADR 0002](adr/0002-core-shell-architecture.md).
 - [x] English and German translations
 - [x] Unit tests for all logic that does not need Minecraft
 - [x] In-game tests with the Fabric client gametest API (separate test mod, not shipped)
-- [ ] Manual acceptance in the Modrinth instance (0.2.0 is installed in "Minekit Dev"; not yet started)
+- Manual acceptance in the Modrinth instance (0.2.0 is installed in "Minekit Dev"; not yet started) (replaced by the acceptance checklist in [TESTING.md](TESTING.md))
 
 ### Verification log (2026-11-06)
 
@@ -130,7 +130,7 @@ Decisions taken without asking, because they are easy to change later:
 - [x] Inventory settings in `config/minekit/inventory.json` using the shared `JsonFileStore`
 - [x] Extension points: dashboard pages and Quick Actions can be added by any module
 - [x] Unit tests, randomized property test and in-game tests (single player and dedicated server)
-- [ ] Manual check in the Modrinth instance (0.3.0 is installed in "Minekit Dev"; not yet started)
+- Manual check in the Modrinth instance (0.3.0 is installed in "Minekit Dev"; not yet started) (replaced by the acceptance checklist in [TESTING.md](TESTING.md))
 
 ### Verification log (2026-11-06)
 
@@ -184,7 +184,7 @@ owner: **variant A**, server recipe book plus vanilla defaults from the game fil
 - [x] Transparent counting: collected, used or given away, unclear (rules shown on the page)
 - [x] Goals: from the item in hand, ±64, or from the Crafting Assistant ("Add as goals"); progress in HUD and page
 - [x] HUD element "Resource session" (movable and hideable like all HUD elements)
-- [ ] Manual check in the Modrinth instance (0.4.0 installed in "Minekit Dev"; not yet started)
+- Manual check in the Modrinth instance (0.4.0 installed in "Minekit Dev"; not yet started) (replaced by the acceptance checklist in [TESTING.md](TESTING.md))
 
 ### Verification log (2026-11-06)
 
@@ -230,7 +230,7 @@ Architecture: [ADR 0005](adr/0005-storage-index-and-smart-deposit.md).
 - [x] Panel swallows mouse press and release, so the cursor item is never dropped by a click on it
 - [x] Crafting Assistant shows stored amounts of missing materials and intermediate products
 - [x] Container/world scoping (hashed ids, no addresses in plain text)
-- [ ] Manual check in the Modrinth instance (0.5.0 installed in "Minekit Dev"; not yet started)
+- Manual check in the Modrinth instance (0.5.0 installed in "Minekit Dev"; not yet started) (replaced by the acceptance checklist in [TESTING.md](TESTING.md))
 
 ### Verification log (2026-11-06)
 
@@ -275,7 +275,7 @@ The project owner tested 0.5.0 in the Modrinth instance and reported three probl
 - [x] Scrollbars in all lists (dashboard, Crafting Assistant, Storage Finder) can be dragged and clicked.
 - [x] Gametests click Minekit controls with the real mouse where it matters (`GameTestMouse`), so a covered control
   can no longer pass a test.
-- [ ] Manual check in the Modrinth instance (0.5.1)
+- Manual check in the Modrinth instance (0.5.1) (replaced by the acceptance checklist in [TESTING.md](TESTING.md))
 
 ### Verification log (2026-11-06)
 
@@ -314,7 +314,7 @@ Architecture: [ADR 0007](adr/0007-loadouts-and-quick-action-configuration.md).
   execution), and from an open container (taking only) through a side panel
 - [x] Smart Deposit and the loadout panel share the space next to the container (one open at a time)
 - [x] Dashboard sidebar fits nine pages on small windows
-- [ ] Manual check in the Modrinth instance (0.6.0)
+- Manual check in the Modrinth instance (0.6.0) (replaced by the acceptance checklist in [TESTING.md](TESTING.md))
 
 ### Verification log (2026-11-06)
 
@@ -348,7 +348,7 @@ The project owner tested 0.6.0. From this version on, the project uses git: `mai
 - [x] Resource sessions belong to the world they were started in (they were global)
 - [x] Mod icon (`assets/minekit/icon.png`, drawn by `tools/make_icon.py`), current description in `fabric.mod.json`
 - [x] README: how to share Minekit with a friend (Modrinth modpack export, or the JAR plus Fabric API)
-- [ ] Manual check in the Modrinth instance (0.6.1)
+- Manual check in the Modrinth instance (0.6.1) (replaced by the acceptance checklist in [TESTING.md](TESTING.md))
 
 ### Verification log (2026-11-06)
 
@@ -379,7 +379,7 @@ placement") verified in the real client by a gametest. Architecture, format rese
 - [x] Build progress, build range (layers), materials (to place, carried, stored, missing as resource goals)
 - [x] Measuring: two corners give width, height, length, volume and distance, in the world and as a message
 - [x] No block is ever placed by Minekit
-- [ ] Manual check in the Modrinth instance (0.7.0)
+- Manual check in the Modrinth instance (0.7.0) (replaced by the acceptance checklist in [TESTING.md](TESTING.md))
 
 ### Verification log (2026-11-06)
 
@@ -418,7 +418,7 @@ Found in the manual test of 0.7.0 with files from a schematic download site. Det
   Glass and other blocks without a map color are no longer black.
 - [x] Public README: a short landing page; the feature guide moved to `docs/USER_GUIDE.md`, build and test
   instructions to `docs/DEVELOPMENT.md`; repository links in `fabric.mod.json`.
-- [ ] Manual check in the Modrinth instance (0.7.1)
+- Manual check in the Modrinth instance (0.7.1) (replaced by the acceptance checklist in [TESTING.md](TESTING.md))
 
 ### Verification log (2026-11-07)
 
@@ -450,7 +450,7 @@ Requested after the 3D view: the whole structure in the world, not only in the s
   `blueprints.json` (`wholeStructure`, no new schema version: older files show the whole structure)
 - [x] Plan view centered; the block under the mouse still matches
 - [x] `CHANGELOG.md`; README links the GitHub release
-- [ ] Manual check in the Modrinth instance (0.8.0)
+- Manual check in the Modrinth instance (0.8.0) (replaced by the acceptance checklist in [TESTING.md](TESTING.md))
 
 ### Verification log (2026-11-07)
 
@@ -485,7 +485,11 @@ release JAR, clear installation instructions and a tested feature set.
 - [x] Keybinds: conflicts with recipe viewers and sorting mods documented (Minekit already lists them on the dashboard)
 - [x] Compatibility: all gametests pass with Sodium, Iris, Mod Menu and Text Placeholder API loaded (see below)
 - [x] Known limitations collected in one place in the user guide (*Known limitations*), outdated ones dropped
-- [ ] Manual check of 0.8.x in the Modrinth instance
+- [x] Testing by players: a test checklist ([TESTING.md](TESTING.md)), which is also the acceptance list before 1.0
+  and replaces the manual checks of the single versions; GitHub issue forms for bugs (versions, feature, mods, log)
+  and ideas
+- [ ] Acceptance with [TESTING.md](TESTING.md) by the owner and other players before 1.0
+- Manual check of 0.8.x in the Modrinth instance (replaced by the acceptance checklist in [TESTING.md](TESTING.md))
 
 ### Verification log (2026-11-07, version 0.8.1)
 
@@ -520,7 +524,7 @@ Found in the manual test of 0.8.x with a TNT launcher from a download site. Deta
   blocks
 - [x] World view in the colors of each side and in the block's shape, more opaque
 - [x] Mod Menu settings button opens the dashboard
-- [ ] Manual check of 0.9.0 in the Modrinth instance
+- Manual check of 0.9.0 in the Modrinth instance (replaced by the acceptance checklist in [TESTING.md](TESTING.md))
 
 ### Verification log (2026-11-07)
 
@@ -544,7 +548,7 @@ Asked for after the 0.9.0 test: the most common way to show a blueprint in the w
 - [x] Ghost opacity setting (30, 50, 70 %) on the Overview
 - [x] "Around me" as a sphere of ten blocks
 - [x] The colored-face ghost of 0.8 and 0.9 (`WorldGhost`, `GhostShell`) removed
-- [ ] Manual check of 0.10.0 in the Modrinth instance
+- Manual check of 0.10.0 in the Modrinth instance (replaced by the acceptance checklist in [TESTING.md](TESTING.md))
 
 ### Verification log (2026-11-07)
 

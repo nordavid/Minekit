@@ -1,0 +1,83 @@
+name: Bug report
+description: Something in Minekit does not work as the user guide describes, or the game crashes.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing Minekit! Please check the [known limitations](https://github.com/nordavid/Minekit/blob/main/docs/USER_GUIDE.md#known-limitations) first; some things are not possible for a client-only mod.
+  - type: input
+    id: minekit
+    attributes:
+      label: Minekit version
+      description: Shown at the top left of the dashboard (`K`), or in the JAR's name.
+      placeholder: "0.10.2"
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Minecraft, Fabric Loader and Fabric API versions
+      placeholder: "26.3, 0.20.1, 0.165.2+26.3"
+    validations:
+      required: true
+  - type: dropdown
+    id: feature
+    attributes:
+      label: Feature
+      options:
+        - Dashboard, settings or shortcuts
+        - Quick Actions
+        - Smart Inventory (sorting, hotbar layout)
+        - Crafting Assistant
+        - Resource Tracker
+        - Storage Finder
+        - Smart Deposit
+        - Loadout Manager
+        - Blueprints (files, screen, ghost blocks)
+        - Measuring
+        - Something else
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where did it happen?
+      options:
+        - Single player
+        - On a server
+        - In a LAN world
+        - On the title screen or in menus
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Screenshots help a lot.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to make it happen again
+      placeholder: |
+        1. Open a chest with ...
+        2. Press G ...
+        3. ...
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+  - type: textarea
+    id: mods
+    attributes:
+      label: Other mods
+      description: All mods in the instance, or "none". The Modrinth App lists them under the instance's content.
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: |
+        The part of `logs/latest.log` in the instance folder around the problem (lines with "Minekit" and any error below them). For a crash, the file from `crash-reports/`. Remove anything you want to keep private, such as server addresses.
+      render: text
