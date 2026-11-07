@@ -10,7 +10,7 @@ items in your chests, puts things away, swaps loadouts and helps you build from 
 Everything runs on your own client. Servers and other players need nothing installed, and Minekit only uses what a
 player has anyway: the items it can see and the clicks it could make by hand.
 
-> **Status:** 0.8.1, in active development. Every feature below is covered by unit tests and by automated tests in
+> **Status:** 0.9.0, in active development. Every feature below is covered by unit tests and by automated tests in
 > the real game client, in single player and on a dedicated server. See [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## Features
@@ -68,7 +68,8 @@ explains each feature step by step.
 Some servers forbid inventory automation or client mods in general. Check the rules of the server you play on.
 
 Minekit is tested together with Sodium, Iris and Mod Menu; it uses no mixins, so it rarely gets in the way of other
-mods. If two mods want the same key, the dashboard's Overview says so.
+mods. With Mod Menu, Minekit's settings button opens the dashboard. If two mods want the same key, the dashboard's
+Overview says so.
 
 ## Building from source
 

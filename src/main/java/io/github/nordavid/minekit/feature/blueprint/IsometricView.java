@@ -1,36 +1,58 @@
 package io.github.nordavid.minekit.feature.blueprint;
 
 import java.util.Arrays;
+import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
+import org.jspecify.annotations.Nullable;
 
 /**
- * Paints a block volume seen from above at an angle (2:1 isometric), one shaded cube per block, so the whole structure
- * can be seen at once. Pure: no Minecraft classes, so it can run on a background thread and be tested.
+ * Paints a block volume seen from above at an angle (2:1 isometric), so the whole structure can be seen at once. Every
+ * block is drawn as its box (a slab half as high, a repeater flat) with its three visible faces: the game's textures
+ * when the blocks are large enough on screen, their average colors otherwise, shaded per side. Pure: no Minecraft
+ * classes, so it can run on a background thread and be tested.
  *
  * <p>The volume is given in view space: {@code u} runs to the lower right of the picture, {@code v} to the lower left,
- * {@code y} up; the camera looks from the {@code +u, +v} corner, so the top, {@code +u} and {@code +v} faces of a cube
- * are visible. Cubes are painted from far to near (by {@code u + y + v}, the depth along the viewing direction), so
- * nearer cubes cover farther ones. Cubes whose three visible faces are covered by opaque neighbors are skipped.
+ * {@code y} up; the camera looks from the {@code +u, +v} corner, so the top, {@code +u} and {@code +v} faces of a box
+ * are visible. Blocks are painted from far to near (by {@code u + y + v}, the depth along the viewing direction), so
+ * nearer blocks cover farther ones. Blocks whose three visible faces are covered by solid neighbors are skipped.
  */
 final class IsometricView {
-	/** The smallest cube width in pixels is {@code 2 * MIN_TILE}; below that the cube shape is lost. */
+	/** The smallest block width in pixels is {@code 2 * MIN_TILE}; below that the shape is lost. */
 	static final int MIN_TILE = 2;
 	static final int MAX_TILE = 48;
-	private static final double LEFT_SHADE = 0.80;
-	private static final double RIGHT_SHADE = 0.64;
+	/** From this size on, faces show their textures; smaller ones their average color. */
+	static final int TEXTURE_TILE = 8;
+	static final int TEXELS = 16;
+	static final double TOP_SHADE = 1.0;
+	static final double LEFT_SHADE = 0.80;
+	static final double RIGHT_SHADE = 0.64;
 	private static final double EDGE_SHADE = 0.86;
-	/** Edges are drawn only for cubes large enough that they do not turn into a grid of lines. */
+	/** Edges are drawn only on plain colored faces large enough that they do not turn into a grid of lines. */
 	private static final int MIN_EDGE_TILE = 6;
 
-	private static final byte NONE = 0;
-	private static final byte TOP = 1;
-	private static final byte LEFT = 2;
-	private static final byte RIGHT = 3;
-	private static final byte EDGE = 4;
+	/** A face: 16 x 16 ARGB texels, row by row from its top left as seen (alpha 0: nothing there), or one color. */
+	record Face(int @Nullable [] texels, int color) {
+		static Face of(int color) {
+			return new Face(null, color);
+		}
+	}
 
 	/**
-	 * The painted picture: ARGB pixels (alpha 0 where nothing is) and, per pixel, the cell painted there last, or -1.
+	 * How one block is drawn, in view space.
+	 *
+	 * @param box   minU, minY, minV, maxU, maxY, maxV in sixteenths of a block
+	 * @param solid a full, opaque cube that hides the faces of its neighbors
 	 */
+	record Look(int[] box, Face top, Face plusU, Face plusV, boolean solid) {
+		static final int[] FULL = {0, 0, 0, TEXELS, TEXELS, TEXELS};
+
+		/** A full cube in one color; solid unless the color is see-through. */
+		static Look cube(int color) {
+			return new Look(FULL, Face.of(color), Face.of(color), Face.of(color), color >>> 24 == 255);
+		}
+	}
+
+	/** The painted picture: ARGB pixels (alpha 0 where nothing is) and, per pixel, the cell painted there last, or -1. */
 	record Picture(int width, int height, int[] pixels, int[] cells, int tile) {
 		int cellAt(int x, int y) {
 			return x < 0 || y < 0 || x >= width || y >= height ? -1 : cells[x + y * width];
@@ -40,11 +62,13 @@ final class IsometricView {
 	/**
 	 * A volume in view space.
 	 *
-	 * @param column for each column {@code u + v * sizeU}, the cell id of its lowest block
+	 * @param column      for each column {@code u + v * sizeU}, the cell id of its lowest block
 	 * @param layerStride how much the cell id grows from one layer to the next
-	 * @param color ARGB color of a cell id; alpha 0 for nothing, below 255 for blocks one can see through
+	 * @param look        how a cell looks, or {@code null} for nothing
+	 * @param overlay     a color laid over a cell, its alpha the share (0: none), for example to show build status
 	 */
-	record Volume(int sizeU, int sizeV, int layers, int[] column, int layerStride, IntUnaryOperator color) {
+	record Volume(int sizeU, int sizeV, int layers, int[] column, int layerStride, IntFunction<@Nullable Look> look,
+			IntUnaryOperator overlay) {
 		Volume {
 			if (sizeU <= 0 || sizeV <= 0 || layers <= 0 || column.length != sizeU * sizeV) {
 				throw new IllegalArgumentException("invalid volume " + sizeU + "x" + layers + "x" + sizeV);
@@ -55,8 +79,12 @@ final class IsometricView {
 			return column[u + v * sizeU] + y * layerStride;
 		}
 
-		boolean opaque(int u, int y, int v) {
-			return u < sizeU && y < layers && v < sizeV && color.applyAsInt(cell(u, y, v)) >>> 24 == 255;
+		boolean solid(int u, int y, int v) {
+			if (u >= sizeU || y >= layers || v >= sizeV) {
+				return false;
+			}
+			Look neighbor = look.apply(cell(u, y, v));
+			return neighbor != null && neighbor.solid();
 		}
 	}
 
@@ -72,7 +100,7 @@ final class IsometricView {
 	}
 
 	/**
-	 * The largest even cube size that fits the picture into {@code maxWidth} x {@code maxHeight} pixels; the smallest
+	 * The largest even block size that fits the picture into {@code maxWidth} x {@code maxHeight} pixels; the smallest
 	 * size if none fits; 0 if even the smallest picture would have more than {@code maxPixels} pixels.
 	 */
 	static int tileFor(int sizeU, int sizeV, int layers, int maxWidth, int maxHeight, long maxPixels) {
@@ -96,12 +124,7 @@ final class IsometricView {
 		int layers = volume.layers();
 		int width = width(sizeU, sizeV, tile);
 		int height = height(sizeU, sizeV, layers, tile);
-		int[] pixels = new int[width * height];
-		int[] cells = new int[width * height];
-		Arrays.fill(cells, -1);
-		byte[] sprite = sprite(tile);
-		int size = 2 * tile;
-
+		Canvas canvas = new Canvas(width, height, sizeV * tile, layers * tile, tile);
 		int maxDepth = (sizeU - 1) + (sizeV - 1) + (layers - 1);
 		for (int depth = 0; depth <= maxDepth; depth++) {
 			for (int y = Math.max(0, depth - (sizeU - 1) - (sizeV - 1)); y <= Math.min(layers - 1, depth); y++) {
@@ -109,80 +132,112 @@ final class IsometricView {
 				for (int u = Math.max(0, rest - (sizeV - 1)); u <= Math.min(sizeU - 1, rest); u++) {
 					int v = rest - u;
 					int cell = volume.cell(u, y, v);
-					int color = volume.color().applyAsInt(cell);
-					if (color >>> 24 == 0) {
+					Look look = volume.look().apply(cell);
+					if (look == null) {
 						continue;
 					}
-					if (volume.opaque(u + 1, y, v) && volume.opaque(u, y + 1, v) && volume.opaque(u, y, v + 1)) {
+					if (volume.solid(u + 1, y, v) && volume.solid(u, y + 1, v) && volume.solid(u, y, v + 1)) {
 						continue;
 					}
-					int left = (sizeV + u - v - 1) * tile;
-					int top = (layers - y - 1) * tile + (u + v) * tile / 2;
-					int[] shades = {0, color, shade(color, LEFT_SHADE), shade(color, RIGHT_SHADE)};
-					for (int sy = 0; sy < size; sy++) {
-						int row = (top + sy) * width + left;
-						for (int sx = 0; sx < size; sx++) {
-							byte mask = sprite[sx + sy * size];
-							if (mask == NONE) {
-								continue;
+					canvas.box(cell, u, y, v, look, volume.overlay().applyAsInt(cell));
+				}
+			}
+		}
+		return new Picture(width, height, canvas.pixels, canvas.cells, tile);
+	}
+
+	/** The picture being painted, with the projection: block point (U, Y, V) to pixel (x, y). */
+	private static final class Canvas {
+		final int width;
+		final int height;
+		final int[] pixels;
+		final int[] cells;
+		final double originX;
+		final double originY;
+		final int tile;
+		final boolean textured;
+
+		Canvas(int width, int height, int originX, int originY, int tile) {
+			this.width = width;
+			this.height = height;
+			this.pixels = new int[width * height];
+			this.cells = new int[width * height];
+			Arrays.fill(cells, -1);
+			this.originX = originX;
+			this.originY = originY;
+			this.tile = tile;
+			this.textured = tile >= TEXTURE_TILE;
+		}
+
+		void box(int cell, int u, int y, int v, Look look, int overlay) {
+			int[] b = look.box();
+			double u0 = u + b[0] / 16.0;
+			double y0 = y + b[1] / 16.0;
+			double v0 = v + b[2] / 16.0;
+			double u1 = u + b[3] / 16.0;
+			double y1 = y + b[4] / 16.0;
+			double v1 = v + b[5] / 16.0;
+			int left = (int) Math.floor(originX + (u0 - v1) * tile);
+			int right = (int) Math.ceil(originX + (u1 - v0) * tile);
+			int top = (int) Math.floor(originY + (u0 + v0) * tile / 2.0 - y1 * tile);
+			int bottom = (int) Math.ceil(originY + (u1 + v1) * tile / 2.0 - y0 * tile);
+			double edge = 1.0 / tile;
+			for (int py = Math.max(0, top); py < Math.min(height, bottom); py++) {
+				for (int px = Math.max(0, left); px < Math.min(width, right); px++) {
+					double x = (px + 0.5 - originX) / tile;
+					double screenY = (py + 0.5 - originY) / tile;
+					int color = 0;
+					boolean drawn = false;
+					// Top face at Y = y1: U - V = x, U + V = 2 * (screenY + y1).
+					double topU = (x + 2 * (screenY + y1)) / 2;
+					double topV = (2 * (screenY + y1) - x) / 2;
+					if (topU >= u0 && topU <= u1 && topV >= v0 && topV <= v1) {
+						boolean border = topU - u0 < edge || u1 - topU < edge || topV - v0 < edge || v1 - topV < edge;
+						color = texel(look.top(), topU - u, topV - v, TOP_SHADE, border);
+						drawn = true;
+					} else {
+						// The +U face at U = u1: V = u1 - x, Y = (u1 + V) / 2 - screenY.
+						double sideV = u1 - x;
+						double sideY = (u1 + sideV) / 2 - screenY;
+						if (sideV >= v0 && sideV <= v1 && sideY >= y0 && sideY <= y1) {
+							boolean border = sideV - v0 < edge || v1 - sideV < edge || sideY - y0 < edge || y1 - sideY < edge;
+							color = texel(look.plusU(), 1 - (sideV - v), 1 - (sideY - y), RIGHT_SHADE, border);
+							drawn = true;
+						} else {
+							// The +V face at V = v1: U = v1 + x, Y = (U + v1) / 2 - screenY.
+							double sideU = v1 + x;
+							double frontY = (sideU + v1) / 2 - screenY;
+							if (sideU >= u0 && sideU <= u1 && frontY >= y0 && frontY <= y1) {
+								boolean border = sideU - u0 < edge || u1 - sideU < edge || frontY - y0 < edge || y1 - frontY < edge;
+								color = texel(look.plusV(), sideU - u, 1 - (frontY - y), LEFT_SHADE, border);
+								drawn = true;
 							}
-							int face = shades[mask & 3];
-							if ((mask & EDGE) != 0) {
-								face = shade(face, EDGE_SHADE);
-							}
-							int target = row + sx;
-							pixels[target] = over(face, pixels[target]);
-							cells[target] = cell;
 						}
 					}
+					if (!drawn || color >>> 24 == 0) {
+						continue;
+					}
+					if (overlay >>> 24 != 0) {
+						color = (mix(color, overlay, (overlay >>> 24) / 255.0) & 0xFFFFFF) | (color & 0xFF000000);
+					}
+					int target = px + py * width;
+					pixels[target] = over(color, pixels[target]);
+					cells[target] = cell;
 				}
 			}
 		}
-		return new Picture(width, height, pixels, cells, tile);
-	}
 
-	/**
-	 * Which face each pixel of a cube belongs to, for a cube {@code 2 * tile} pixels wide and high: the top diamond, the
-	 * left ({@code +v}) and the right ({@code +u}) face, decided at the pixel centers. Pixels at the border of a face are
-	 * marked as edges.
-	 */
-	static byte[] sprite(int tile) {
-		int size = 2 * tile;
-		byte[] faces = new byte[size * size];
-		double half = tile / 2.0;
-		for (int py = 0; py < size; py++) {
-			for (int px = 0; px < size; px++) {
-				double cx = px + 0.5;
-				double cy = py + 0.5;
-				byte face = NONE;
-				if (Math.abs(cx - tile) / tile + Math.abs(cy - half) / half <= 1) {
-					face = TOP;
-				} else if (cx < tile && cy >= half + cx / 2 && cy <= 3 * half + cx / 2) {
-					face = LEFT;
-				} else if (cx >= tile && cy >= tile - (cx - tile) / 2 && cy <= 2 * tile - (cx - tile) / 2) {
-					face = RIGHT;
-				}
-				faces[px + py * size] = face;
+		/** The color of a face at (s, t), both 0 to 1 within the block, from the left and from the top as seen. */
+		private int texel(Face face, double s, double t, double shade, boolean border) {
+			int[] texels = face.texels();
+			if (textured && texels != null) {
+				int column = Math.clamp((int) (s * TEXELS), 0, TEXELS - 1);
+				int row = Math.clamp((int) (t * TEXELS), 0, TEXELS - 1);
+				return shade(texels[column + row * TEXELS], shade);
 			}
+			double factor = border && tile >= MIN_EDGE_TILE ? shade * EDGE_SHADE : shade;
+			return shade(face.color(), factor);
 		}
-		if (tile < MIN_EDGE_TILE) {
-			return faces;
-		}
-		byte[] marked = faces.clone();
-		for (int py = 0; py < size; py++) {
-			for (int px = 0; px < size; px++) {
-				byte face = faces[px + py * size];
-				if (face != NONE && (differs(faces, size, px - 1, py, face) || differs(faces, size, px + 1, py, face)
-						|| differs(faces, size, px, py - 1, face) || differs(faces, size, px, py + 1, face))) {
-					marked[px + py * size] = (byte) (face | EDGE);
-				}
-			}
-		}
-		return marked;
-	}
-
-	private static boolean differs(byte[] faces, int size, int x, int y, byte face) {
-		return x < 0 || y < 0 || x >= size || y >= size || faces[x + y * size] != face;
 	}
 
 	static int shade(int argb, double factor) {
@@ -190,6 +245,13 @@ final class IsometricView {
 		int green = (int) (((argb >> 8) & 255) * factor);
 		int blue = (int) ((argb & 255) * factor);
 		return (argb & 0xFF000000) | (red << 16) | (green << 8) | blue;
+	}
+
+	static int mix(int a, int b, double share) {
+		int red = (int) (((a >> 16) & 255) * (1 - share) + ((b >> 16) & 255) * share);
+		int green = (int) (((a >> 8) & 255) * (1 - share) + ((b >> 8) & 255) * share);
+		int blue = (int) ((a & 255) * (1 - share) + (b & 255) * share);
+		return 0xFF000000 | (red << 16) | (green << 8) | blue;
 	}
 
 	/** Source-over compositing of two non-premultiplied ARGB colors. */

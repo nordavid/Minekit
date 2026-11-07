@@ -522,6 +522,7 @@
 	"minekit.blueprint.range_all_tooltip": "Wieder alle Ebenen bauen",
 	"minekit.blueprint.north_up": "Norden ist oben, so wie er in der Welt steht.",
 	"minekit.blueprint.not_placed_map": "Noch nicht platziert: so gezeigt, wie in der Datei gespeichert.",
+	"minekit.blueprint.mcedit_hint": "Altes .schematic-Format (Minecraft 1.12 und älter): Neuere Blöcke passen nicht hinein, und umgewandelten Dateien fehlen oft welche. Gibt es eine .litematic oder .schem davon, nimm die.",
 	"minekit.blueprint.view.plan": "Plan",
 	"minekit.blueprint.view.plan_tooltip": "Eine Ebene von oben, wie ein Bauplan",
 	"minekit.blueprint.view.whole": "3D",

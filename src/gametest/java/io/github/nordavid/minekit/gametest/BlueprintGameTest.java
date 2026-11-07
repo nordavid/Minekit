@@ -3,6 +3,7 @@ package io.github.nordavid.minekit.gametest;
 import com.mojang.blaze3d.platform.InputConstants;
 import io.github.nordavid.minekit.MinekitRuntime;
 import io.github.nordavid.minekit.core.action.QuickAction;
+import io.github.nordavid.minekit.feature.blueprint.BlockLooks;
 import io.github.nordavid.minekit.feature.blueprint.Blueprint;
 import io.github.nordavid.minekit.feature.blueprint.BlueprintModule;
 import io.github.nordavid.minekit.feature.blueprint.BlueprintProgress;
@@ -50,6 +51,7 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 			NbtIo.writeCompressed(litematic(), module.directory().resolve("tower.litematic"));
 			NbtIo.writeCompressed(spongeV3(), module.directory().resolve("slab.schem"));
 			NbtIo.writeCompressed(lattice(), module.directory().resolve("lattice.schem"));
+			NbtIo.writeCompressed(showcase(), module.directory().resolve("showcase.schem"));
 			Files.write(module.directory().resolve("broken.schem"), new byte[] {0x1f, (byte) 0x8b, 1, 2, 3});
 			// Uncompressed, like the files of some download sites.
 			try (DataOutputStream out = new DataOutputStream(Files.newOutputStream(module.directory().resolve("house.schematic")))) {
@@ -74,6 +76,7 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 			screenTabsAndImport(context, runtime, module);
 			measuring(context, runtime, module, command, connection);
 			largeStructure(context, module);
+			texturedViews(context, runtime, module);
 			// The last gametest: how long each module's callbacks took over the whole run.
 			for (var timing : context.computeOnClient(client -> runtime.modules().timings())) {
 				System.out.printf(java.util.Locale.ROOT, "[Minekit gametest] timing %-20s %8d calls, %8.1f us average, %8.1f ms worst%n",
@@ -83,8 +86,8 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 	}
 
 	private static void brokenFileFailsWithAReason(ClientGameTestContext context, MinekitRuntime runtime, BlueprintModule module) {
-		check(context.computeOnClient(client -> module.files()).equals(List.of("broken.schem", "house.schematic", "lattice.schem", "slab.schem",
-				"tower.litematic")), "the five files are listed, got " + context.computeOnClient(client -> module.files()));
+		check(context.computeOnClient(client -> module.files()).equals(List.of("broken.schem", "house.schematic", "lattice.schem", "showcase.schem",
+				"slab.schem", "tower.litematic")), "the six files are listed, got " + context.computeOnClient(client -> module.files()));
 		context.runOnClient(client -> module.select("broken.schem"));
 		context.waitFor(client -> module.failedFile().isPresent(), 200);
 		check(module.active().isEmpty(), "a broken file is not shown");
@@ -286,6 +289,45 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 		context.runOnClient(client -> module.setPlacement(null));
 	}
 
+	/** The game's textures and block shapes in the views: the kinds of blocks a redstone build is made of. */
+	private static void texturedViews(ClientGameTestContext context, MinekitRuntime runtime, BlueprintModule module) {
+		check(context.computeOnClient(client -> {
+			BlockLooks.Look cobblestone = BlockLooks.of(Blocks.COBBLESTONE.defaultBlockState());
+			BlockLooks.Look slab = BlockLooks.of(Blocks.OAK_SLAB.defaultBlockState());
+			BlockLooks.Look repeater = BlockLooks.of(Blocks.REPEATER.defaultBlockState());
+			BlockLooks.Look glass = BlockLooks.of(Blocks.GLASS.defaultBlockState());
+			BlockLooks.Look grass = BlockLooks.of(Blocks.GRASS_BLOCK.defaultBlockState());
+			int top = grass.colors()[Direction.UP.ordinal()];
+			return java.util.Arrays.stream(cobblestone.faces()).allMatch(face -> face != null && face.length == 256) && cobblestone.solid()
+					&& slab.box()[4] == 8 && repeater.box()[4] == 2 && !glass.solid() && ((top >> 8) & 255) > ((top >> 16) & 255);
+		}), "textures and shapes come from the game: cobblestone has six textured sides, a slab is half high, a repeater flat, glass is not "
+				+ "solid and the grass top is tinted green");
+
+		context.runOnClient(client -> module.select("showcase.schem"));
+		context.waitFor(client -> module.active().map(active -> active.file().equals("showcase.schem")).orElse(false), 200);
+		context.runOnClient(client -> action(runtime, "open_blueprints").run().run());
+		context.waitForScreen(BlueprintScreen.class);
+		context.clickScreenButton("minekit.blueprint.tab.layers");
+		context.waitFor(client -> client.gui.screen() instanceof BlueprintScreen screen && screen.isStructureDrawn(), 200);
+		context.waitTicks(3);
+		context.takeScreenshot("minekit-p6-08-textured-3d");
+		context.clickScreenButton("minekit.blueprint.view.plan");
+		context.waitTicks(2);
+		context.takeScreenshot("minekit-p6-09-textured-plan");
+		context.clickScreenButton("minekit.blueprint.view.whole");
+		context.getInput().pressKey(InputConstants.KEY_ESCAPE);
+		context.waitForScreen(null);
+
+		BlockPos feet = context.computeOnClient(client -> client.player.blockPosition());
+		BlockPos corner = feet.offset(2, 0, 3);
+		context.runOnClient(client -> module.setPlacement(new Placement(corner.getX(), corner.getY(), corner.getZ(), 0, false)));
+		context.getInput().lookAt(corner.offset(2, 0, 1));
+		context.waitFor(client -> module.ghostFacesDrawn() > 0, 200);
+		context.waitTicks(3);
+		context.takeScreenshot("minekit-p6-10-textured-world");
+		context.runOnClient(client -> module.setPlacement(null));
+	}
+
 	private static String measureText(BlockPos a, BlockPos b) {
 		return (Math.abs(a.getX() - b.getX()) + 1) + " × " + (Math.abs(a.getY() - b.getY()) + 1) + " × " + (Math.abs(a.getZ() - b.getZ()) + 1);
 	}
@@ -340,6 +382,36 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 		body.putString("Materials", "Alpha");
 		body.putByteArray("Blocks", new byte[] {1, 1, 35, 20});
 		body.putByteArray("Data", new byte[] {0, 1, 14, 0});
+		CompoundTag root = new CompoundTag();
+		root.put("Schematic", body);
+		return root;
+	}
+
+	/** 5 x 2 x 3: a cobblestone floor and, on it, the blocks of a small redstone build. */
+	private static CompoundTag showcase() {
+		String[] palette = {"minecraft:air", "minecraft:cobblestone", "minecraft:sticky_piston[facing=up]", "minecraft:slime_block",
+				"minecraft:dispenser[facing=up]", "minecraft:repeater[facing=south]", "minecraft:redstone_wire", "minecraft:stone_button[face=floor]",
+				"minecraft:glass", "minecraft:oak_slab[type=bottom]", "minecraft:grass_block", "minecraft:oak_leaves"};
+		int[] upper = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 0, 0, 0, 0};
+		CompoundTag paletteTag = new CompoundTag();
+		for (int i = 0; i < palette.length; i++) {
+			paletteTag.putInt(palette[i], i);
+		}
+		byte[] data = new byte[5 * 2 * 3];
+		for (int i = 0; i < 15; i++) {
+			data[i] = 1;
+			data[15 + i] = (byte) upper[i];
+		}
+		CompoundTag blocks = new CompoundTag();
+		blocks.put("Palette", paletteTag);
+		blocks.putByteArray("Data", data);
+		CompoundTag body = new CompoundTag();
+		body.putInt("Version", 3);
+		body.putInt("DataVersion", 4500);
+		body.putShort("Width", (short) 5);
+		body.putShort("Height", (short) 2);
+		body.putShort("Length", (short) 3);
+		body.put("Blocks", blocks);
 		CompoundTag root = new CompoundTag();
 		root.put("Schematic", body);
 		return root;

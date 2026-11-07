@@ -522,6 +522,7 @@
 	"minekit.blueprint.range_all_tooltip": "Build every layer again",
 	"minekit.blueprint.north_up": "North is up, as it stands in the world.",
 	"minekit.blueprint.not_placed_map": "Not placed yet: shown as saved in the file.",
+	"minekit.blueprint.mcedit_hint": "Old .schematic format (Minecraft 1.12 and older): it cannot hold newer blocks, and converted files often lack some. If there is a .litematic or .schem of it, use that.",
 	"minekit.blueprint.view.plan": "Plan",
 	"minekit.blueprint.view.plan_tooltip": "One layer from above, like a building plan",
 	"minekit.blueprint.view.whole": "3D",

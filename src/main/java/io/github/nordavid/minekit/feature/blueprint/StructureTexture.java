@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
 import net.minecraft.world.level.block.state.BlockState;
@@ -26,8 +27,6 @@ final class StructureTexture implements AutoCloseable {
 	private static final Identifier ID = Identifier.fromNamespaceAndPath("minekit", "blueprint_structure");
 	/** Pixels of the largest picture (2048 x 2048): bounds the memory of a huge, flat blueprint. */
 	private static final long MAX_PIXELS = 4L << 20;
-	/** Opacity of blocks one can see through. */
-	private static final int SEE_THROUGH_ALPHA = 0x70;
 	private static final Status[] STATUSES = Status.values();
 
 	/** Everything a picture depends on except the build status, which changes all the time. */
@@ -127,25 +126,77 @@ final class StructureTexture implements AutoCloseable {
 				column[u + v * sizeU] = x + z * blueprint.sizeX();
 			}
 		}
-		int[] colors = new int[blueprint.palette().size()];
-		for (int i = 0; i < colors.length; i++) {
+		IsometricView.Look[] looks = new IsometricView.Look[blueprint.palette().size()];
+		for (int i = 0; i < looks.length; i++) {
 			if (!blueprint.palette().get(i).isAir()) {
-				BlockState state = resolved.state(i);
-				int color = LayerTexture.blockColor(state);
-				colors[i] = state != null && LayerTexture.seeThrough(state) ? (color & 0xFFFFFF) | SEE_THROUGH_ALPHA << 24 : color;
+				// Placed, the blocks are turned like in the world; the view then turns around them.
+				BlockState state = placement == null ? resolved.state(i) : resolved.expected(i, placement);
+				BlockLooks.Look look = BlockLooks.of(state);
+				looks[i] = look == null ? IsometricView.Look.cube(LayerTexture.UNKNOWN) : view(look, turn);
 			}
 		}
 		byte[] status = progress == null ? null : progress.statusSnapshot();
 		BlueprintSettings.LayerRange range = progress == null ? null : progress.range();
 		int stride = blueprint.sizeX() * blueprint.sizeZ();
-		IntUnaryOperator color = cell -> {
-			int base = colors[blueprint.paletteIndexAt(cell)];
-			if (base == 0 || status == null || !range.contains(cell / stride)) {
-				return base;
-			}
-			return (LayerTexture.tint(base, STATUSES[status[cell]]) & 0xFFFFFF) | (base & 0xFF000000);
+		IntUnaryOperator overlay = cell -> status == null || !range.contains(cell / stride) || looks[blueprint.paletteIndexAt(cell)] == null ? 0
+				: LayerTexture.overlay(STATUSES[status[cell]]);
+		return new IsometricView.Volume(sizeU, sizeV, layers, column, stride, cell -> looks[blueprint.paletteIndexAt(cell)], overlay);
+	}
+
+	/** Sides of the world the view's +u and +v faces show, for each turn of the camera. */
+	private static final Direction[] PLUS_U = {Direction.EAST, Direction.NORTH, Direction.WEST, Direction.SOUTH};
+	private static final Direction[] PLUS_V = {Direction.SOUTH, Direction.EAST, Direction.NORTH, Direction.WEST};
+
+	/** A block's look turned into view space: its box, its top turned with the view, and the two sides the camera sees. */
+	static IsometricView.Look view(BlockLooks.Look look, int turn) {
+		int[] b = look.box();
+		int s = BlockLooks.SIZE;
+		int[] box = switch (turn) {
+			case 0 -> new int[] {b[0], b[1], b[2], b[3], b[4], b[5]};
+			case 1 -> new int[] {s - b[5], b[1], b[0], s - b[2], b[4], b[3]};
+			case 2 -> new int[] {s - b[3], b[1], s - b[5], s - b[0], b[4], s - b[2]};
+			default -> new int[] {b[2], b[1], s - b[3], b[5], b[4], s - b[0]};
 		};
-		return new IsometricView.Volume(sizeU, sizeV, layers, column, stride, color);
+		int up = Direction.UP.ordinal();
+		IsometricView.Face top = new IsometricView.Face(turnTop(look.faces()[up], turn), look.colors()[up]);
+		IsometricView.Face plusU = face(look, PLUS_U[turn]);
+		IsometricView.Face plusV = face(look, PLUS_V[turn]);
+		return new IsometricView.Look(box, top, plusU, plusV, look.solid());
+	}
+
+	private static IsometricView.Face face(BlockLooks.Look look, Direction side) {
+		return new IsometricView.Face(look.faces()[side.ordinal()], look.colors()[side.ordinal()]);
+	}
+
+	/** The top texture as the turned camera sees it: (s, t) in view space read from (x, z) in the world. */
+	private static int @Nullable [] turnTop(int @Nullable [] texels, int turn) {
+		if (texels == null || turn == 0) {
+			return texels;
+		}
+		int n = BlockLooks.SIZE;
+		int[] turned = new int[texels.length];
+		for (int t = 0; t < n; t++) {
+			for (int s = 0; s < n; s++) {
+				int x;
+				int z;
+				switch (turn) {
+					case 1 -> {
+						x = t;
+						z = n - 1 - s;
+					}
+					case 2 -> {
+						x = n - 1 - s;
+						z = n - 1 - t;
+					}
+					default -> {
+						x = n - 1 - t;
+						z = s;
+					}
+				}
+				turned[s + t * n] = texels[x + z * n];
+			}
+		}
+		return turned;
 	}
 
 	private void upload(IsometricView.Picture picture) {
