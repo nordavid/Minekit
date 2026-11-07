@@ -39,6 +39,13 @@ public final class ModuleManager {
 		}
 	}
 
+	/** Time a module spent in its guarded callbacks since the game started, for profiling. */
+	public record Timing(String moduleId, long calls, long totalNanos, long maxNanos) {
+		public double averageMicros() {
+			return calls == 0 ? 0 : totalNanos / 1000.0 / calls;
+		}
+	}
+
 	private final Settings settings;
 	private final Map<String, Slot> slots = new LinkedHashMap<>();
 	private boolean initialized;
@@ -129,6 +136,13 @@ public final class ModuleManager {
 		return Optional.ofNullable(slots.get(moduleId)).map(Slot::status);
 	}
 
+	/** How long each module's callbacks took, in registration order. */
+	public List<Timing> timings() {
+		List<Timing> result = new ArrayList<>(slots.size());
+		slots.values().forEach(slot -> result.add(new Timing(slot.metadata.id(), slot.calls, slot.totalNanos, slot.maxNanos)));
+		return result;
+	}
+
 	/** All modules in registration order. */
 	public List<ModuleStatus> modules() {
 		List<ModuleStatus> result = new ArrayList<>(slots.size());
@@ -193,6 +207,9 @@ public final class ModuleManager {
 		private final ModuleMetadata metadata;
 		private ModuleState state = ModuleState.REGISTERED;
 		private String failure;
+		private long calls;
+		private long totalNanos;
+		private long maxNanos;
 
 		private Slot(ModuleManager manager, MinekitModule module, ModuleMetadata metadata) {
 			this.manager = manager;
@@ -205,11 +222,21 @@ public final class ModuleManager {
 			if (state == ModuleState.FAILED) {
 				return;
 			}
+			long start = System.nanoTime();
 			try {
 				work.run();
 			} catch (RuntimeException | LinkageError e) {
 				manager.callbackFailed(this, what, e);
+			} finally {
+				measured(start);
 			}
+		}
+
+		private void measured(long start) {
+			long nanos = System.nanoTime() - start;
+			calls++;
+			totalNanos += nanos;
+			maxNanos = Math.max(maxNanos, nanos);
 		}
 
 		@Override
@@ -217,11 +244,14 @@ public final class ModuleManager {
 			if (state == ModuleState.FAILED) {
 				return fallback;
 			}
+			long start = System.nanoTime();
 			try {
 				return work.getAsBoolean();
 			} catch (RuntimeException | LinkageError e) {
 				manager.callbackFailed(this, what, e);
 				return fallback;
+			} finally {
+				measured(start);
 			}
 		}
 

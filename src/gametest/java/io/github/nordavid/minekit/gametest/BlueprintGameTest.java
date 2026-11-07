@@ -74,6 +74,11 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 			screenTabsAndImport(context, runtime, module);
 			measuring(context, runtime, module, command, connection);
 			largeStructure(context, module);
+			// The last gametest: how long each module's callbacks took over the whole run.
+			for (var timing : context.computeOnClient(client -> runtime.modules().timings())) {
+				System.out.printf(java.util.Locale.ROOT, "[Minekit gametest] timing %-20s %8d calls, %8.1f us average, %8.1f ms worst%n",
+						timing.moduleId(), timing.calls(), timing.averageMicros(), timing.maxNanos() / 1e6);
+			}
 		}
 	}
 

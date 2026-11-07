@@ -209,6 +209,20 @@ class ModuleManagerTest {
 	}
 
 	@Test
+	void callbacksAreTimed() {
+		TestModule module = new TestModule("module", true);
+		manager.register(module);
+		manager.initializeAll();
+		module.context.guard("tick", () -> {
+		});
+		module.context.guard("key", () -> true, false);
+		ModuleManager.Timing timing = manager.timings().getFirst();
+		assertEquals("module", timing.moduleId());
+		assertEquals(2, timing.calls());
+		assertTrue(timing.maxNanos() <= timing.totalNanos());
+	}
+
+	@Test
 	void aQuestionThatThrowsAnswersTheFallback() {
 		TestModule module = new TestModule("module", true);
 		manager.register(module);
