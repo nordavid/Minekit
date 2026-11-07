@@ -80,7 +80,7 @@ development client and the project layout are described in [docs/DEVELOPMENT.md]
 
 ## Documentation
 
-- [User guide](docs/USER_GUIDE.md): every feature, where your data is stored, troubleshooting
+- [User guide](docs/USER_GUIDE.md): every feature, where your data is stored, known limitations, troubleshooting
 - [Development](docs/DEVELOPMENT.md): versions, build, tests, development client, project layout
 - [Architecture decisions](docs/adr/): why things are built the way they are
 - [Progress](docs/PROGRESS.md) and [project plan](PROJECT_PLAN.md)

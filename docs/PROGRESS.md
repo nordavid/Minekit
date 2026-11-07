@@ -484,7 +484,7 @@ release JAR, clear installation instructions and a tested feature set.
 - [x] Performance: time per module callback measured over the whole gametest run (see below)
 - [x] Keybinds: conflicts with recipe viewers and sorting mods documented (Minekit already lists them on the dashboard)
 - [ ] Compatibility testing with popular mods (Sodium, Iris, Mod Menu): needs downloads, waiting for the owner's OK
-- [ ] Known limitations collected in one place in the user guide
+- [x] Known limitations collected in one place in the user guide (*Known limitations*), outdated ones dropped
 - [ ] Manual check of 0.8.x in the Modrinth instance
 
 ### Verification log (2026-11-07, version 0.8.1)
