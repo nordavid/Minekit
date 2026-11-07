@@ -555,3 +555,9 @@ Asked for after the 0.9.0 test: the most common way to show a blueprint in the w
 | Gametest: cost | The 40 x 20 x 40 stone and glass checkerboard (a worst case: every block shows all its sides) fills the 24 000-quad budget; writing them took 0.9 to 1.6 ms per frame. Same scene, with and without the ghost, three runs: 82 and 100 fps, 36 and 39 (compatibility run), 28 and 39, so 8 to 28 % fewer frames. |
 | Compatibility run | All eight gametest classes pass with Sodium, Iris and Mod Menu; the ghost looks the same. |
 | All gametests | All eight gametest classes pass. |
+
+### 0.10.1 (2026-11-07)
+
+- [x] Flicker where ghost blocks touch real blocks (a blueprint standing on sandstone): sides against real solid
+  blocks are left out, ghost blocks are drawn 0.4 % smaller (ADR 0009, addendum)
+- Verified: the gametest tower standing on the ground leaves out the sides against the ground; all gametests pass.
