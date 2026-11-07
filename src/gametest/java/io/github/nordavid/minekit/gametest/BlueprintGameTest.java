@@ -162,6 +162,10 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 		context.waitTicks(3);
 		int whole = context.computeOnClient(client -> module.ghostQuadsDrawn());
 		check(whole > 0, "the whole structure is drawn in the world");
+		// The tower stands on the ground: its lowest ghost blocks must not draw their bottom into the ground's top (flicker).
+		context.waitTicks(5);
+		check(context.computeOnClient(client -> module.ghostSidesAgainstRealBlocks()) > 0, "sides against real blocks are left out, got "
+				+ context.computeOnClient(client -> module.ghostSidesAgainstRealBlocks()));
 		context.takeScreenshot("minekit-p6-01-guide");
 		QuickAction toggleWhole = action(MinekitRuntime.get(), "blueprint_toggle_whole");
 		context.runOnClient(client -> toggleWhole.run().run());

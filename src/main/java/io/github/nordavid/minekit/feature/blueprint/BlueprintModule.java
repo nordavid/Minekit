@@ -413,6 +413,11 @@ public final class BlueprintModule implements MinekitModule {
 		return ghost.quadsLastFrame();
 	}
 
+	/** Ghost sides left out because a real solid block touches them, for tests. */
+	public int ghostSidesAgainstRealBlocks() {
+		return ghost.worldCoveredFaces();
+	}
+
 	/** Microseconds writing them took, for tests. */
 	public long ghostDrawMicros() {
 		return ghost.emitNanos() / 1000;
@@ -569,7 +574,7 @@ public final class BlueprintModule implements MinekitModule {
 		}
 		boolean whole = settings.current().whole();
 		if (whole) {
-			ghost.update(resolved, progress, placement, player, settings.current().ghostOpacity());
+			ghost.update(resolved, progress, placement, player, settings.current().ghostOpacity(), level);
 		} else {
 			ghost.hide();
 		}
