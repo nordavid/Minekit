@@ -25,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
@@ -53,7 +54,7 @@ public final class BlueprintModule implements MinekitModule {
 
 	/** Positions compared with the world per tick: a large structure is checked a slice at a time. */
 	static final int CHECKS_PER_TICK = 4096;
-	/** Around the player, the ghost shows missing and wrong blocks this far (horizontally) and half as far vertically. */
+	/** "Around me" shows the missing and wrong blocks within a sphere of this radius around the player. */
 	static final int GHOST_RADIUS = 10;
 	static final int MAX_GHOSTS = 1500;
 
@@ -70,7 +71,7 @@ public final class BlueprintModule implements MinekitModule {
 	private final JsonFileStore<BlueprintSettings> settings;
 	private final KeybindManager keybinds;
 	private final NotificationService notifications;
-	private final WorldGhost ghost = new WorldGhost();
+	private final GhostBlocks ghost = new GhostBlocks();
 	private final QuickActionRegistry quickActions;
 	private final DashboardPages dashboardPages;
 	private final GoalBridge goals;
@@ -135,6 +136,11 @@ public final class BlueprintModule implements MinekitModule {
 						: unavailableReason(), this::measureClear));
 		dashboardPages.register(new BlueprintDashboardPage(this));
 		ClientTickEvents.END_CLIENT_TICK.register(client -> context.guard("tick", () -> tick(client)));
+		LevelRenderEvents.COLLECT_SUBMITS.register(render -> context.guard("render", () -> {
+			if (isEnabled()) {
+				ghost.submit(render);
+			}
+		}));
 	}
 
 	@Override
@@ -402,14 +408,28 @@ public final class BlueprintModule implements MinekitModule {
 		notifications.info(Component.translatable(whole ? "minekit.blueprint.whole_on" : "minekit.blueprint.whole_off"));
 	}
 
-	/** Faces of the whole-structure view drawn in the last tick, for tests. */
-	public int ghostFacesDrawn() {
-		return ghost.drawnLastTick();
+	/** Quads of the ghost blocks written in the last frame, for tests. */
+	public int ghostQuadsDrawn() {
+		return ghost.quadsLastFrame();
 	}
 
-	/** Microseconds the whole-structure view took in the last tick, for tests. */
+	/** Microseconds writing them took, for tests. */
 	public long ghostDrawMicros() {
-		return ghost.drawNanos() / 1000;
+		return ghost.emitNanos() / 1000;
+	}
+
+	/** Switches the ghost to the next opacity on offer. */
+	void cycleGhostOpacity() {
+		int[] offered = BlueprintSettings.GHOST_OPACITIES;
+		int current = settings.current().ghostOpacity();
+		int next = offered[0];
+		for (int i = 0; i < offered.length; i++) {
+			if (offered[i] == current) {
+				next = offered[(i + 1) % offered.length];
+			}
+		}
+		int chosen = next;
+		update(settings -> settings.withGhostOpacity(chosen));
 	}
 
 	public void setRange(BlueprintSettings.@Nullable LayerRange range) {
@@ -420,6 +440,7 @@ public final class BlueprintModule implements MinekitModule {
 	}
 
 	private void resetProgress() {
+		ghost.hide();
 		progress = null;
 		progressPlacement = null;
 		progressWorld = null;
@@ -501,7 +522,7 @@ public final class BlueprintModule implements MinekitModule {
 		if (settings.current().show()) {
 			drawBlueprint(resolved, progress, placement, level, player.blockPosition(), range);
 		} else {
-			ghost.reset();
+			ghost.hide();
 		}
 	}
 
@@ -530,9 +551,10 @@ public final class BlueprintModule implements MinekitModule {
 	}
 
 	/**
-	 * The building guide, as gizmos for this tick: the box, the layers being built, either the whole structure
-	 * ({@link WorldGhost}) or the missing (teal) blocks around the player, the wrong (red) blocks around the player, and
-	 * the next block. Around the player the world is read every tick, so the guide reacts at once to placed blocks.
+	 * The building guide for this tick: the box, the layers being built, either the whole structure as ghost blocks
+	 * ({@link GhostBlocks}, with red boxes around wrong blocks) or the missing (teal) and wrong (red) blocks within a
+	 * sphere around the player, and the next block. Around the player the world is read every tick, so the guide reacts
+	 * at once to placed blocks.
 	 */
 	private void drawBlueprint(ResolvedBlueprint resolved, BlueprintProgress progress, Placement placement, ClientLevel level, BlockPos player,
 			BlueprintSettings.LayerRange range) {
@@ -547,15 +569,18 @@ public final class BlueprintModule implements MinekitModule {
 		}
 		boolean whole = settings.current().whole();
 		if (whole) {
-			ghost.draw(resolved, progress, placement, player);
+			ghost.update(resolved, progress, placement, player, settings.current().ghostOpacity());
 		} else {
-			ghost.reset();
+			ghost.hide();
 		}
 		int drawn = 0;
-		int vertical = GHOST_RADIUS / 2 + 1;
-		for (int dy = -vertical; dy <= vertical && drawn < MAX_GHOSTS; dy++) {
+		int radiusSquared = GHOST_RADIUS * GHOST_RADIUS;
+		for (int dy = -GHOST_RADIUS; dy <= GHOST_RADIUS && drawn < MAX_GHOSTS; dy++) {
 			for (int dz = -GHOST_RADIUS; dz <= GHOST_RADIUS && drawn < MAX_GHOSTS; dz++) {
 				for (int dx = -GHOST_RADIUS; dx <= GHOST_RADIUS && drawn < MAX_GHOSTS; dx++) {
+					if (dx * dx + dy * dy + dz * dz > radiusSquared) {
+						continue;
+					}
 					int[] local = placement.toLocal(blueprint, player.getX() + dx, player.getY() + dy, player.getZ() + dz);
 					if (local == null) {
 						continue;
@@ -571,7 +596,8 @@ public final class BlueprintModule implements MinekitModule {
 					if (status == Status.MISSING && !whole) {
 						Gizmos.cuboid(pos, 0.02f, GizmoStyle.strokeAndFill(COLOR_MISSING_STROKE, 1.0f, COLOR_MISSING_FILL));
 						drawn++;
-					} else if (status == Status.WRONG) {
+					} else if (status == Status.WRONG && !whole) {
+						// With the whole structure shown, the ghost draws the wrong blocks itself.
 						Gizmos.cuboid(pos, 0.02f, GizmoStyle.strokeAndFill(COLOR_WRONG_STROKE, 1.0f, COLOR_WRONG_FILL));
 						drawn++;
 					}

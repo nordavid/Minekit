@@ -14,7 +14,7 @@ class BlueprintSettingsCodecTest {
 
 	@Test
 	void everythingSurvivesARoundTrip() throws JsonCodec.FormatException {
-		BlueprintSettings settings = BlueprintSettings.DEFAULT.withActive("house.schematic").withShow(false).withWhole(false)
+		BlueprintSettings settings = BlueprintSettings.DEFAULT.withActive("house.schematic").withShow(false).withWhole(false).withGhostOpacity(70)
 				.withPlacement("house.schematic", "sp-0123456789abcdef", new Placement(10, 64, -3, 1, true))
 				.withRange("house.schematic", new BlueprintSettings.LayerRange(2, 5));
 		BlueprintSettings decoded = CODEC.decode(CODEC.encode(settings)).value();
@@ -31,6 +31,7 @@ class BlueprintSettingsCodecTest {
 				""";
 		JsonCodec.Decoded<BlueprintSettings> decoded = CODEC.decode(JsonParser.parseString(old));
 		assertTrue(decoded.value().whole());
+		assertEquals(BlueprintSettings.DEFAULT_GHOST_OPACITY, decoded.value().ghostOpacity());
 		assertTrue(decoded.warnings().isEmpty(), decoded.warnings().toString());
 	}
 
