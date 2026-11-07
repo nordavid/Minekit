@@ -84,8 +84,8 @@ Minekit like a player would:
 - read real `.litematic`, `.schem` and `.schematic` files (one broken, one from 1.20.1 with a renamed block, one
   uncompressed MCEdit file with numeric ids), check that the screen says why the broken one failed, compare the guide
   with blocks placed by commands (correct, wrong block, wrong orientation, missing), turn the placement, switch
-  between the whole structure in the world and the view around the player, draw a 40 x 20 x 40 structure and check
-  the cost per tick, open the blueprint screen's tabs with the 3D view and the plan, import a copy by drag and drop,
+  between the ghost blocks of the whole structure and the view around the player, draw a 40 x 20 x 40 structure as
+  ghost blocks and compare the frame rate with and without them, open the blueprint screen's tabs with the 3D view and the plan, import a copy by drag and drop,
   and measure between two blocks
 
 They are a separate test mod (`src/gametest`), never packaged into the Minekit JAR, and not part of `build`. The
@@ -121,7 +121,7 @@ to `run/` (ignored by git). To join a server straight away:
 A successful start logs:
 
 ```text
-[Minekit] Minekit 0.9.0 initialized (client-only) on Minecraft 26.3 with Fabric Loader 0.20.1
+[Minekit] Minekit 0.10.0 initialized (client-only) on Minecraft 26.3 with Fabric Loader 0.20.1
 ```
 
 On the first start of a fresh `run/` folder Minecraft shows the accessibility onboarding screen, and the

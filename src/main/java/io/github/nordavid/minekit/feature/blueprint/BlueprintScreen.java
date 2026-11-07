@@ -238,6 +238,14 @@ public final class BlueprintScreen extends Screen {
 					});
 			whole.setTooltip(Tooltip.create(Component.translatable("minekit.blueprint.show_whole_tooltip")));
 			addWidget(whole);
+			FlatButton opacity = new FlatButton(0, 0, pane.width(), ROW, Component.translatable("minekit.blueprint.ghost_opacity",
+					module.settings().current().ghostOpacity()), button -> {
+						module.cycleGhostOpacity();
+						rebuildWidgets();
+					});
+			opacity.setTooltip(Tooltip.create(Component.translatable("minekit.blueprint.ghost_opacity_tooltip")));
+			opacity.active = module.settings().current().whole();
+			addWidget(opacity);
 		}
 
 		pane.heading(Component.translatable("minekit.blueprint.progress"));

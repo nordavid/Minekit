@@ -3,6 +3,14 @@
 All notable changes to Minekit. Versions follow [semantic versioning](https://semver.org/); before 1.0.0, a minor
 version may change behavior.
 
+## 0.10.0 (2026-11-07)
+
+- Blueprints stand in the world as ghost blocks: the real block models with their textures, translucent, the way
+  building mods show schematics. Wrong blocks get a red box, correct ones are not drawn. The opacity is a setting
+  (30, 50 or 70 %).
+- "Around me" shows the missing and wrong blocks within ten blocks in every direction (a sphere); before, it was a box
+  only six blocks high, so blocks came and went while walking.
+
 ## 0.9.0 (2026-11-07)
 
 - Blueprints look like the blocks they are: the 3D view and the plan use the game's textures (also those of resource

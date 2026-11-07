@@ -158,19 +158,19 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 
 		// The guide in the world: look at the structure with no screen open. The whole structure is shown by default.
 		context.getInput().lookAt(origin.offset(1, 0, 1));
-		context.waitFor(client -> module.ghostFacesDrawn() > 0, 100);
+		context.waitFor(client -> module.ghostQuadsDrawn() > 0, 100);
 		context.waitTicks(3);
-		int whole = context.computeOnClient(client -> module.ghostFacesDrawn());
+		int whole = context.computeOnClient(client -> module.ghostQuadsDrawn());
 		check(whole > 0, "the whole structure is drawn in the world");
 		context.takeScreenshot("minekit-p6-01-guide");
 		QuickAction toggleWhole = action(MinekitRuntime.get(), "blueprint_toggle_whole");
 		context.runOnClient(client -> toggleWhole.run().run());
 		context.waitTicks(3);
-		check(context.computeOnClient(client -> module.ghostFacesDrawn()) == 0 && !module.settings().current().whole(),
+		check(context.computeOnClient(client -> module.ghostQuadsDrawn()) == 0 && !module.settings().current().whole(),
 				"around the player only: no whole-structure faces");
 		context.takeScreenshot("minekit-p6-01b-guide-around");
 		context.runOnClient(client -> toggleWhole.run().run());
-		context.waitFor(client -> module.ghostFacesDrawn() > 0, 100);
+		context.waitFor(client -> module.ghostQuadsDrawn() > 0, 100);
 
 		// A quarter turn turns the stair as well: facing north becomes facing east.
 		context.runOnClient(client -> module.setPlacement(new Placement(origin.getX(), origin.getY(), origin.getZ(), 1, false)));
@@ -267,7 +267,7 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 		context.runOnClient(client -> action(runtime, "measure_clear").run().run());
 	}
 
-	/** 40 x 20 x 40 blocks of stone and glass in a 3D checkerboard: 96 000 visible faces, more than are drawn. */
+	/** 40 x 20 x 40 blocks of stone and glass in a 3D checkerboard: far more visible quads than one frame draws. */
 	private static void largeStructure(ClientGameTestContext context, BlueprintModule module) {
 		context.runOnClient(client -> module.select("lattice.schem"));
 		context.waitFor(client -> module.active().map(active -> active.file().equals("lattice.schem")).orElse(false), 400);
@@ -275,17 +275,24 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 		BlockPos feet = context.computeOnClient(client -> client.player.blockPosition());
 		BlockPos corner = feet.offset(6, 0, 6);
 		context.runOnClient(client -> module.setPlacement(new Placement(corner.getX(), corner.getY(), corner.getZ(), 0, false)));
-		context.waitFor(client -> module.ghostFacesDrawn() > 0, 400);
+		context.waitFor(client -> module.ghostQuadsDrawn() > 0, 400);
 		context.waitTicks(40);
-		int faces = context.computeOnClient(client -> module.ghostFacesDrawn());
+		int faces = context.computeOnClient(client -> module.ghostQuadsDrawn());
 		long micros = context.computeOnClient(client -> module.ghostDrawMicros());
 		int fps = context.computeOnClient(client -> client.getFps());
-		System.out.println("[Minekit gametest] large structure: " + faces + " faces drawn in " + micros + " us per tick, " + fps + " fps");
-		check(faces > 1000 && faces <= 12_000, "the nearest faces are drawn, at most 12 000, got " + faces);
-		check(micros < 50_000, "drawing takes less than 50 ms per tick, got " + micros + " us");
+		System.out.println("[Minekit gametest] large structure: " + faces + " ghost quads written in " + micros + " us per frame, " + fps + " fps");
+		check(faces > 1000 && faces <= 24_000, "the nearest blocks are drawn, at most 24 000 quads, got " + faces);
+		check(micros < 50_000, "writing them takes less than 50 ms per frame, got " + micros + " us");
 		context.getInput().lookAt(corner.offset(20, 6, 20));
 		context.waitTicks(3);
 		context.takeScreenshot("minekit-p6-07-large");
+		// Frames per second in the same scene with and without the ghost (the game measures once a second).
+		int withGhost = averageFps(context);
+		QuickAction toggleWhole = action(MinekitRuntime.get(), "blueprint_toggle_whole");
+		context.runOnClient(client -> toggleWhole.run().run());
+		int withoutGhost = averageFps(context);
+		context.runOnClient(client -> toggleWhole.run().run());
+		System.out.println("[Minekit gametest] large structure: " + withGhost + " fps with the ghost, " + withoutGhost + " fps without");
 		context.runOnClient(client -> module.setPlacement(null));
 	}
 
@@ -322,10 +329,20 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 		BlockPos corner = feet.offset(2, 0, 3);
 		context.runOnClient(client -> module.setPlacement(new Placement(corner.getX(), corner.getY(), corner.getZ(), 0, false)));
 		context.getInput().lookAt(corner.offset(2, 0, 1));
-		context.waitFor(client -> module.ghostFacesDrawn() > 0, 200);
+		context.waitFor(client -> module.ghostQuadsDrawn() > 0, 200);
 		context.waitTicks(3);
 		context.takeScreenshot("minekit-p6-10-textured-world");
 		context.runOnClient(client -> module.setPlacement(null));
+	}
+
+	private static int averageFps(ClientGameTestContext context) {
+		context.waitTicks(30);
+		int total = 0;
+		for (int i = 0; i < 4; i++) {
+			context.waitTicks(21);
+			total += context.computeOnClient(client -> client.getFps());
+		}
+		return total / 4;
 	}
 
 	private static String measureText(BlockPos a, BlockPos b) {
