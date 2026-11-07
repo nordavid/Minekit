@@ -561,3 +561,12 @@ Asked for after the 0.9.0 test: the most common way to show a blueprint in the w
 - [x] Flicker where ghost blocks touch real blocks (a blueprint standing on sandstone): sides against real solid
   blocks are left out, ghost blocks are drawn 0.4 % smaller (ADR 0009, addendum)
 - Verified: the gametest tower standing on the ground leaves out the sides against the ground; all gametests pass.
+
+### 0.10.2 (2026-11-07)
+
+- [x] Building the lowest layer from the inside, the amber "next block" was the block the player stood in. Now the
+  blueprint block in the crosshair is framed and named below the crosshair (a ray through the block positions, like
+  the game's block picking, `VoxelRay`, unit tested; the player's own positions are passed through); the next block
+  never is where the player stands and is only shown when no blueprint block is in the crosshair.
+- Verified: the gametest looks at the tower and gets one of its blocks as the target, with "Stone" below the
+  crosshair (screenshot); the next block is never the player's position; all gametests pass.

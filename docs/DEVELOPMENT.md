@@ -121,7 +121,7 @@ to `run/` (ignored by git). To join a server straight away:
 A successful start logs:
 
 ```text
-[Minekit] Minekit 0.10.1 initialized (client-only) on Minecraft 26.3 with Fabric Loader 0.20.1
+[Minekit] Minekit 0.10.2 initialized (client-only) on Minecraft 26.3 with Fabric Loader 0.20.1
 ```
 
 On the first start of a fresh `run/` folder Minecraft shows the accessibility onboarding screen, and the
