@@ -15,6 +15,7 @@ import net.minecraft.gizmos.GizmoStyle;
 import net.minecraft.gizmos.Gizmos;
 import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.util.Util;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
@@ -39,6 +40,11 @@ final class GhostBlocks {
 	/** Blocks considered per frame: more than the quads allow for a filled structure, whose inside is left out. */
 	static final int MAX_BLOCKS = 16_000;
 	private static final int RESELECT_DISTANCE = 6;
+	/** Blocks whose real neighbors are read per tick, so sides against real blocks are left out (no flicker). */
+	private static final int WORLD_CHECKS_PER_TICK = 2048;
+	/** Each ghost block is drawn this much smaller than its cell, so it never shares a plane with another face. */
+	private static final float SCALE = 0.996f;
+	private static final int[][] OFFSETS = {{0, -1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 0, 1}, {-1, 0, 0}, {1, 0, 0}};
 	private static final int MAX_MARKS = 2_000;
 	/** The game's render type for translucent things on a texture atlas, per atlas (there is one for blocks). */
 	private static final java.util.Map<Identifier, RenderType> RENDER_TYPES = new java.util.HashMap<>();
@@ -56,6 +62,10 @@ final class GhostBlocks {
 	private @Nullable Key key;
 	private int @Nullable [] candidates;
 	private @Nullable Selection selection;
+	/** Per selected block: the sides that touch a real solid block in the world, bit {@code 1 << side}. */
+	private byte[] worldCovered = new byte[0];
+	private int worldCursor;
+	private int worldCoveredFaces;
 	private GhostModels.Model[] models = new GhostModels.Model[0];
 	private boolean[] unknown = new boolean[0];
 	private @Nullable BlueprintProgress progress;
@@ -66,6 +76,11 @@ final class GhostBlocks {
 	private int generation;
 	private int quadsLastFrame;
 	private long emitNanos;
+
+	/** Sides of the selected blocks that touch a real solid block and are left out, for tests. */
+	int worldCoveredFaces() {
+		return worldCoveredFaces;
+	}
 
 	/** Quads written in the last frame, for tests. */
 	int quadsLastFrame() {
@@ -89,7 +104,7 @@ final class GhostBlocks {
 	 *
 	 * @param opacity percent
 	 */
-	void update(ResolvedBlueprint resolved, BlueprintProgress current, Placement placement, BlockPos player, int opacity) {
+	void update(ResolvedBlueprint resolved, BlueprintProgress current, Placement placement, BlockPos player, int opacity, Level level) {
 		Blueprint blueprint = resolved.blueprint();
 		Key next = new Key(blueprint, placement, current.range());
 		if (!next.equals(key)) {
@@ -105,7 +120,37 @@ final class GhostBlocks {
 		progress = current;
 		alpha = Math.clamp(Math.round(opacity * 2.55f), 16, 255);
 		visible = true;
+		readWorld(level, placement);
 		drawMarks(current);
+	}
+
+	/**
+	 * Reads, for a slice of the selected blocks, which of their sides touch a real solid block. Those sides are hidden
+	 * anyway, and drawing them would put two faces in one plane, which flickers (a ghost standing on the ground).
+	 */
+	private void readWorld(Level level, Placement placement) {
+		Selection shown = selection;
+		byte[] covered = worldCovered;
+		if (shown == null || covered.length != shown.cells().length || covered.length == 0) {
+			return;
+		}
+		BlockPos.MutableBlockPos neighbor = new BlockPos.MutableBlockPos();
+		for (int n = 0; n < Math.min(WORLD_CHECKS_PER_TICK, covered.length); n++) {
+			int i = worldCursor;
+			worldCursor = (worldCursor + 1) % covered.length;
+			int x = placement.x() + shown.offsets()[i * 3];
+			int y = placement.y() + shown.offsets()[i * 3 + 1];
+			int z = placement.z() + shown.offsets()[i * 3 + 2];
+			int mask = 0;
+			for (int side = 0; side < 6; side++) {
+				neighbor.set(x + OFFSETS[side][0], y + OFFSETS[side][1], z + OFFSETS[side][2]);
+				if (level.getBlockState(neighbor).isSolidRender()) {
+					mask |= 1 << side;
+				}
+			}
+			worldCoveredFaces += Integer.bitCount(mask) - Integer.bitCount(covered[i]);
+			covered[i] = (byte) mask;
+		}
 	}
 
 	/** Red boxes around wrong blocks and purple ones around blocks this version does not know, nearest first. */
@@ -191,6 +236,9 @@ final class GhostBlocks {
 			return;
 		}
 		selection = chosen;
+		worldCovered = new byte[chosen.cells().length];
+		worldCursor = 0;
+		worldCoveredFaces = 0;
 		selectedAround = player;
 	}
 
@@ -236,12 +284,13 @@ final class GhostBlocks {
 		poseStack.translate(placement.x() - camera.x, placement.y() - camera.y, placement.z() - camera.z);
 		GhostModels.Model[] shownModels = models;
 		int shownAlpha = alpha;
+		byte[] shownWorld = worldCovered.length == shown.cells().length ? worldCovered : new byte[shown.cells().length];
 		context.submitNodeCollector().submitCustomGeometry(poseStack, renderType,
-				(pose, buffer) -> emit(pose, buffer, shown, shownKey.blueprint(), current, shownModels, shownAlpha));
+				(pose, buffer) -> emit(pose, buffer, shown, shownWorld, shownKey.blueprint(), current, shownModels, shownAlpha));
 		poseStack.popPose();
 	}
 
-	private void emit(PoseStack.Pose pose, VertexConsumer buffer, Selection shown, Blueprint blueprint, BlueprintProgress current,
+	private void emit(PoseStack.Pose pose, VertexConsumer buffer, Selection shown, byte[] world, Blueprint blueprint, BlueprintProgress current,
 			GhostModels.Model[] shownModels, int shownAlpha) {
 		long start = System.nanoTime();
 		Matrix4f matrix = pose.pose();
@@ -258,10 +307,11 @@ final class GhostBlocks {
 				continue;
 			}
 			GhostModels.Model model = shownModels[blueprint.paletteIndexAt(cell)];
-			int covered = shown.covered()[i];
-			float ox = shown.offsets()[i * 3];
-			float oy = shown.offsets()[i * 3 + 1];
-			float oz = shown.offsets()[i * 3 + 2];
+			int covered = shown.covered()[i] | world[i];
+			// The block's center; its corners are drawn a little closer to it (SCALE).
+			float cx = shown.offsets()[i * 3] + 0.5f;
+			float cy = shown.offsets()[i * 3 + 1] + 0.5f;
+			float cz = shown.offsets()[i * 3 + 2] + 0.5f;
 			int colorAlpha = (status == Status.UNCHECKED ? faint : shownAlpha) << 24;
 			float[] positions = model.positions();
 			float[] uvs = model.uvs();
@@ -275,7 +325,8 @@ final class GhostBlocks {
 				pose.transformNormal(normals[q * 3], normals[q * 3 + 1], normals[q * 3 + 2], normal);
 				for (int vertex = 0; vertex < 4; vertex++) {
 					int p = q * 12 + vertex * 3;
-					matrix.transformPosition(ox + positions[p], oy + positions[p + 1], oz + positions[p + 2], position);
+					matrix.transformPosition(cx + (positions[p] - 0.5f) * SCALE, cy + (positions[p + 1] - 0.5f) * SCALE,
+							cz + (positions[p + 2] - 0.5f) * SCALE, position);
 					buffer.addVertex(position.x(), position.y(), position.z(), color, uvs[q * 8 + vertex * 2], uvs[q * 8 + vertex * 2 + 1],
 							OverlayTexture.NO_OVERLAY, LightCoordsUtil.FULL_BRIGHT, normal.x(), normal.y(), normal.z());
 				}

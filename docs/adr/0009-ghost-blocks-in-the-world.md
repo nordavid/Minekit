@@ -57,3 +57,15 @@ appeared and disappeared while walking, and upper layers of tall builds were mis
   without it, 36 and 39 (with Sodium, Iris and Mod Menu), and 28 and 39: between 8 and 28 % fewer frames in this
   worst case. Ordinary builds hide most sides behind their neighbors and stay far below the budget.
 - With Sodium and Iris (shaders off) the ghost looks the same.
+
+## Addendum (2026-11-07, version 0.10.1)
+
+The first manual test found flicker where a blueprint stands on the ground: the bottom of the lowest ghost blocks and
+the top of the real ground lie in one plane, and the depth test picks one or the other from frame to frame
+(z-fighting). Two measures:
+
+1. Like the game's own cull faces, ghost sides that touch a real solid block (`isSolidRender`) are left out. The world
+   is read for a slice of 2048 selected blocks per tick, so the whole selection is current within a few ticks and
+   blocks placed or broken later are noticed.
+2. Each ghost block is drawn 0.4 % smaller than its cell, around its center, so two ghost blocks (glass next to stone)
+   or a ghost and a real block that is not solid never share a plane either.

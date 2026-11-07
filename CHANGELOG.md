@@ -3,6 +3,12 @@
 All notable changes to Minekit. Versions follow [semantic versioning](https://semver.org/); before 1.0.0, a minor
 version may change behavior.
 
+## 0.10.1 (2026-11-07)
+
+- Ghost blocks no longer flicker where they touch real blocks, for example a blueprint standing on the ground: like
+  the game itself, Minekit leaves out the sides that touch a real solid block, and draws each ghost block a little
+  smaller than its cell.
+
 ## 0.10.0 (2026-11-07)
 
 - Blueprints stand in the world as ghost blocks: the real block models with their textures, translucent, the way
