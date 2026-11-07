@@ -175,8 +175,10 @@ places a block; you build.
    untouched. Choose a blueprint on the left. If a file cannot be read, the screen says why.
 2. *Place in front of me*. Move it block by block (Shift: ten), turn it, mirror it, or move it to where you stand.
 3. Build. The whole structure stands in the world as ghost blocks: every block still to place is shown as the real
-   block, translucent; wrong blocks get a red box, and blocks you placed correctly simply look like themselves. The
-   next block (the nearest open one in the lowest unfinished layer) is amber, with its name. *Ghost blocks: 50 %
+   block, translucent; wrong blocks get a red box, and blocks you placed correctly simply look like themselves. Look
+   at a ghost block (within reach) and it is framed in amber, with its name, icon and orientation below the
+   crosshair; for a wrong block also what is there now. When you look at none, the next block (the nearest open one
+   in the lowest unfinished layer, never where you stand) is amber, with its name. *Ghost blocks: 50 %
    opaque* on the Overview switches between 30, 50 and 70 %. Switch off *Whole structure in the world* (or use Quick
    Actions → *Blueprint: whole structure or only around me*) to see only the missing (teal) and wrong blocks within
    ten blocks of you, in every direction. Limiting the layers being built (*Layers* tab), for example to the layer you

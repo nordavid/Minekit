@@ -3,6 +3,12 @@
 All notable changes to Minekit. Versions follow [semantic versioning](https://semver.org/); before 1.0.0, a minor
 version may change behavior.
 
+## 0.10.2 (2026-11-07)
+
+- The blueprint block in the crosshair is framed in amber, and its name, icon and orientation are shown below the
+  crosshair (for a wrong block also what is there now). Building from the inside out, the "next block" no longer marks
+  the block the player stands in.
+
 ## 0.10.1 (2026-11-07)
 
 - Ghost blocks no longer flicker where they touch real blocks, for example a blueprint standing on the ground: like

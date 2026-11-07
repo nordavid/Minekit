@@ -137,6 +137,18 @@ public final class BlueprintGameTest implements FabricClientGameTest {
 		check(empty.count(Status.MISSING) == 11 && empty.count(Status.UNCHECKED) == 0, "nothing built yet: 11 missing, got missing "
 				+ empty.count(Status.MISSING) + ", unchecked " + empty.count(Status.UNCHECKED));
 
+		// Looking at the tower picks the missing block in the crosshair, shown with its name below the crosshair.
+		context.getInput().lookAt(origin);
+		context.waitTicks(3);
+		BlockPos target = context.computeOnClient(client -> module.lookTarget().orElse(null));
+		check(target != null && target.getX() >= origin.getX() && target.getX() < origin.getX() + 3 && target.getY() >= origin.getY()
+				&& target.getY() < origin.getY() + 2 && target.getZ() >= origin.getZ() && target.getZ() < origin.getZ() + 3,
+				"the block in the crosshair is a blueprint block, got " + target);
+		context.takeScreenshot("minekit-p6-01c-look-target");
+		BlockPos next = context.computeOnClient(client -> module.nextBlock().orElse(null));
+		BlockPos feet = context.computeOnClient(client -> client.player.blockPosition());
+		check(next == null || !next.equals(feet) && !next.equals(feet.above()), "the next block is never where the player stands");
+
 		command.accept("setblock " + xyz(origin) + " minecraft:stone");
 		command.accept("setblock " + xyz(origin.offset(1, 0, 0)) + " minecraft:dirt");
 		command.accept("setblock " + xyz(origin.offset(1, 0, 1)) + " minecraft:short_grass");
